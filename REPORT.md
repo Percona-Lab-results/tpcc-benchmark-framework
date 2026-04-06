@@ -1,6 +1,6 @@
-# MariaDB vs MySQL -- TPC-C Benchmark Report
+# MariaDB vs MySQL -- TPROC-C Benchmark Report
 
-**HammerDB 4.12 | TPC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
+**HammerDB 4.12 | TPROC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
 **Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
 **OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: 2026-04-06
 
@@ -25,12 +25,12 @@
 
 ## Buffer Pool Sweep -- 64 VU, 10G-80G
 
-Both engines ran TPC-C with 64 virtual users and buffer pool varied from 10 to 80 GiB.
+Both engines ran TPROC-C with 64 virtual users and buffer pool varied from 10 to 80 GiB.
 The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot data.
 
-![TPC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
+![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
-![TPC-C Throughput vs Buffer Pool Size -- bar chart](report_assets/fig5_bp_bar.png)
+![TPROC-C Throughput vs Buffer Pool Size -- bar chart](report_assets/fig5_bp_bar.png)
 
 | BP Size | MariaDB NOTPM | MySQL NOTPM | Delta |
 |---------|--------------|-------------|-------|
@@ -53,7 +53,7 @@ The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot d
 
 Concurrency swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
 
-![TPC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
+![TPROC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
 
 ![Concurrency Scaling Efficiency](report_assets/fig4_scaling.png)
 
@@ -171,11 +171,11 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 
 ## Methodology
 
-- **Benchmark:** TPC-C via HammerDB 4.12 (`tpcc_run.tcl`)
+- **Benchmark:** TPROC-C via HammerDB 4.12 (`tpcc_run.tcl`)
 - **Workload:** 1000 warehouses (~100 GB), 60 s ramp-up, 3600 s measurement window
 - **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
 - **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
-- **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPC-C new-order mix is 45%)
+- **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPROC-C new-order mix is 45%)
 - **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps; repeated runs at same size are averaged
 - **VU sweep:** 50 GiB buffer pool, VU in {1, 2, 4, 8, 16, 32, 64, 128}
 

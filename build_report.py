@@ -39,7 +39,7 @@ plt.rcParams.update({
     "axes.titlepad":    12,
 })
 
-# TPS (commits+rollbacks/s) → NOTPM (new orders/min): TPC-C new-order mix = 45%
+# TPS (commits+rollbacks/s) → NOTPM (new orders/min): TPROC-C new-order mix = 45%
 TPS_TO_NOTPM = 60 * 0.45
 
 # ── load data ─────────────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ def make_bp_chart():
 
     ax.set_xlabel("InnoDB Buffer Pool Size (GiB)", labelpad=6)
     ax.set_ylabel("Average NOTPM (thousands)", labelpad=6)
-    ax.set_title("TPC-C Throughput vs Buffer Pool Size  [64 VU · 3600 s]")
+    ax.set_title("TPROC-C Throughput vs Buffer Pool Size  [64 VU · 3600 s]")
     ax.set_xticks(maria_bp_x)
     ax.set_xticklabels([f"{x}G" for x in maria_bp_x])
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
@@ -229,7 +229,7 @@ def make_vu_chart():
 
     ax.set_xlabel("Virtual Users (log scale)", labelpad=6)
     ax.set_ylabel("Average NOTPM (thousands)", labelpad=6)
-    ax.set_title("TPC-C Throughput vs Concurrency  [BP 50G · 3600 s]")
+    ax.set_title("TPROC-C Throughput vs Concurrency  [BP 50G · 3600 s]")
     ax.set_xscale("log", base=2)
     ax.set_xticks(maria_vu_x)
     ax.set_xticklabels([str(x) for x in maria_vu_x])
@@ -324,7 +324,7 @@ def make_bp_bar_chart():
     ax.set_xticklabels([f"{s}G" for s in all_sizes])
     ax.set_xlabel("InnoDB Buffer Pool Size (GiB)", labelpad=6)
     ax.set_ylabel("Average NOTPM (thousands)", labelpad=6)
-    ax.set_title("TPC-C Throughput — Buffer Pool Sweep  [64 VU · 3600 s]")
+    ax.set_title("TPROC-C Throughput — Buffer Pool Sweep  [64 VU · 3600 s]")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
     ax.grid(axis="y", ls="--", alpha=0.5)
     ax.legend()
@@ -546,7 +546,7 @@ HTML = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MariaDB vs MySQL — TPC-C Benchmark Report</title>
+<title>MariaDB vs MySQL — TPROC-C Benchmark Report</title>
 <style>
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
@@ -737,8 +737,8 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── HEADER ── -->
 <header>
-  <h1>MariaDB vs MySQL — TPC-C Benchmark Report</h1>
-  <div class="subtitle">HammerDB 4.12 · TPC-C · 1000 warehouses · Intel Xeon Gold 6230 (2×20c) · 187 GiB RAM · NVMe 2.9 TB</div>
+  <h1>MariaDB vs MySQL — TPROC-C Benchmark Report</h1>
+  <div class="subtitle">HammerDB 4.12 · TPROC-C · 1000 warehouses · Intel Xeon Gold 6230 (2×20c) · 187 GiB RAM · NVMe 2.9 TB</div>
   <div class="pills">
     <span class="pill pill-maria">MariaDB 12.2.2</span>
     <span class="pill pill-mysql">MySQL 8.4.8</span>
@@ -802,7 +802,7 @@ HTML = f"""<!DOCTYPE html>
   <h2>Buffer Pool Sweep  <span style="font-weight:400;color:#555;font-size:0.85rem">64 VU · 10G – 80G</span></h2>
 
   <p>
-    Both databases ran TPC-C with 64 virtual users and a fixed buffer pool varying from 10 GiB to 80 GiB.
+    Both databases ran TPROC-C with 64 virtual users and a fixed buffer pool varying from 10 GiB to 80 GiB.
     The dataset represents 1000 warehouses (~100 GB working set), so an 80 GiB pool covers ~80% of hot data.
   </p>
 
@@ -927,11 +927,11 @@ HTML = f"""<!DOCTYPE html>
 <!-- ── SECTION 6: METHODOLOGY ── -->
 <section>
   <h2>Methodology</h2>
-  <p><strong>Benchmark:</strong> TPC-C via HammerDB 4.12 (<code>tpcc_run.tcl</code>).</p>
+  <p><strong>Benchmark:</strong> TPROC-C via HammerDB 4.12 (<code>tpcc_run.tcl</code>).</p>
   <p><strong>Workload:</strong> 1000 warehouses (~100 GB data), 60 s ramp-up, 3600 s measurement window.</p>
   <p><strong>Hardware:</strong> Intel Xeon Gold 6230 (2×20 cores, HT enabled = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB).</p>
   <p><strong>OS:</strong> Ubuntu 24.04, kernel 6.8.0-60-generic.</p>
-  <p><strong>Metric:</strong> Average NOTPM (New Orders per Minute) derived from per-second commit rate x 60 x 0.45 (TPC-C new-order mix). Computed over the steady-state window after ramp-up; multiple runs at the same configuration are averaged.</p>
+  <p><strong>Metric:</strong> Average NOTPM (New Orders per Minute) derived from per-second commit rate x 60 x 0.45 (TPROC-C new-order mix). Computed over the steady-state window after ramp-up; multiple runs at the same configuration are averaged.</p>
   <p><strong>Buffer pool sweep:</strong> 64 VU, buffer pool varied 10–80 GiB in 10 GiB steps.</p>
   <p><strong>VU sweep:</strong> 50 GiB buffer pool, VU ∈ {{1, 2, 4, 8, 16, 32, 64, 128}}.</p>
 </section>
@@ -996,9 +996,9 @@ def build_md():
     scale_m  = maria_vu_y[-1]/maria_vu_y[0]
     scale_q  = mysql_vu_y[-1]/mysql_vu_y[0]
 
-    return f"""# MariaDB vs MySQL -- TPC-C Benchmark Report
+    return f"""# MariaDB vs MySQL -- TPROC-C Benchmark Report
 
-**HammerDB 4.12 | TPC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
+**HammerDB 4.12 | TPROC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
 **Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
 **OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: {datetime.now().strftime("%Y-%m-%d")}
 
@@ -1023,12 +1023,12 @@ def build_md():
 
 ## Buffer Pool Sweep -- 64 VU, 10G-80G
 
-Both engines ran TPC-C with 64 virtual users and buffer pool varied from 10 to 80 GiB.
+Both engines ran TPROC-C with 64 virtual users and buffer pool varied from 10 to 80 GiB.
 The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot data.
 
-![TPC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
+![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
-![TPC-C Throughput vs Buffer Pool Size -- bar chart](report_assets/fig5_bp_bar.png)
+![TPROC-C Throughput vs Buffer Pool Size -- bar chart](report_assets/fig5_bp_bar.png)
 
 {md_bp_table()}
 
@@ -1042,7 +1042,7 @@ The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot d
 
 Concurrency swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
 
-![TPC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
+![TPROC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
 
 ![Concurrency Scaling Efficiency](report_assets/fig4_scaling.png)
 
@@ -1076,11 +1076,11 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 
 ## Methodology
 
-- **Benchmark:** TPC-C via HammerDB 4.12 (`tpcc_run.tcl`)
+- **Benchmark:** TPROC-C via HammerDB 4.12 (`tpcc_run.tcl`)
 - **Workload:** 1000 warehouses (~100 GB), 60 s ramp-up, 3600 s measurement window
 - **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
 - **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
-- **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPC-C new-order mix is 45%)
+- **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPROC-C new-order mix is 45%)
 - **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps; repeated runs at same size are averaged
 - **VU sweep:** 50 GiB buffer pool, VU in {{1, 2, 4, 8, 16, 32, 64, 128}}
 
