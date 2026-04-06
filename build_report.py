@@ -642,7 +642,7 @@ def _html_jitter_table(rows):
         '<table class="data-table">',
         '<thead><tr>'
         '<th>Config</th><th>DB</th><th>Mean NOTPM</th>'
-        '<th>Std Dev</th><th>CV%</th><th>P5</th><th>P95</th><th>P5&#8209;P95 Range</th>'
+        '<th>Std Dev</th><th title="Coefficient of Variation = std_dev / mean × 100. Lower is more stable.">CV%</th><th>P5</th><th>P95</th><th>P5&#8209;P95 Range</th>'
         '</tr></thead><tbody>',
     ]
     for r in rows:
@@ -1082,6 +1082,9 @@ HTML = f"""<!DOCTYPE html>
     Each box shows the distribution of per-second NOTPM samples during the final
     30 minutes of a run. Box edges = P25/P75, centre line = median,
     whiskers = P5/P95. A narrow box means stable throughput; a tall box means high variance.
+    The tables below include <strong>CV%</strong> (Coefficient of Variation = std&#8202;/&#8202;mean&#8202;&times;&#8202;100):
+    a scale-free measure of relative variability — lower is more stable, and unlike raw std dev
+    it is directly comparable across runs with different mean throughputs.
   </p>
 
   <h3>Buffer Pool Sweep</h3>
@@ -1276,6 +1279,9 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 
 Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
 Box = P25–P75, centre = median, whiskers = P5–P95.
+The tables include **CV%** (Coefficient of Variation = std / mean × 100): a scale-free measure of
+relative variability. Lower is more stable; unlike raw std dev it is directly comparable across
+runs with different mean throughputs.
 
 ### Buffer Pool Sweep
 

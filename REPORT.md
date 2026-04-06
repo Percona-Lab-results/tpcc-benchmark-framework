@@ -173,6 +173,9 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 
 Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
 Box = P25–P75, centre = median, whiskers = P5–P95.
+The tables include **CV%** (Coefficient of Variation = std / mean × 100): a scale-free measure of
+relative variability. Lower is more stable; unlike raw std dev it is directly comparable across
+runs with different mean throughputs.
 
 ### Buffer Pool Sweep
 
