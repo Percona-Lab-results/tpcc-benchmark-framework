@@ -1,3 +1,4 @@
+import os as _os
 """
 Build static HTML report comparing MariaDB vs MySQL
 from BP sweep and VU sweep benchmark runs.
@@ -55,9 +56,16 @@ def extract_bp_gb(label: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
-def fig_to_b64(fig) -> str:
+ASSETS_DIR = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "report_assets")
+_os.makedirs(ASSETS_DIR, exist_ok=True)
+
+def fig_to_b64(fig, filename: str = None) -> str:
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", facecolor=C_BG)
+    if filename:
+        path = _os.path.join(ASSETS_DIR, filename)
+        with open(path, "wb") as f:
+            f.write(buf.getvalue())
     plt.close(fig)
     buf.seek(0)
     return base64.b64encode(buf.read()).decode()
@@ -199,7 +207,7 @@ def make_bp_chart():
     ax.legend(loc="upper left")
     ax.set_xlim(8, 84)
     fig.tight_layout()
-    return fig_to_b64(fig)
+    return fig_to_b64(fig, "fig1_bp_line.png")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -230,7 +238,7 @@ def make_vu_chart():
     ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend(loc="upper left")
     fig.tight_layout()
-    return fig_to_b64(fig)
+    return fig_to_b64(fig, "fig2_vu_line.png")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -261,7 +269,7 @@ def make_timeseries_chart():
     ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend()
     fig.tight_layout()
-    return fig_to_b64(fig)
+    return fig_to_b64(fig, "fig3_timeseries.png")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -288,7 +296,7 @@ def make_scaling_chart():
     ax.grid(axis="both", ls="--", alpha=0.4)
     ax.legend()
     fig.tight_layout()
-    return fig_to_b64(fig)
+    return fig_to_b64(fig, "fig4_scaling.png")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -321,7 +329,7 @@ def make_bp_bar_chart():
     ax.grid(axis="y", ls="--", alpha=0.5)
     ax.legend()
     fig.tight_layout()
-    return fig_to_b64(fig)
+    return fig_to_b64(fig, "fig5_bp_bar.png")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -492,7 +500,7 @@ def cfg_html_rows():
 # ══════════════════════════════════════════════════════════════════════════════
 #  RENDER HTML
 # ══════════════════════════════════════════════════════════════════════════════
-print("Generating charts…")
+print("Generating charts...")
 img_bp_line  = make_bp_chart()
 img_bp_bar   = make_bp_bar_chart()
 img_vu_line  = make_vu_chart()
@@ -942,3 +950,147 @@ out = "report.html"
 with open(out, "w", encoding="utf-8") as f:
     f.write(HTML)
 print(f"Report written -> {out}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MARKDOWN REPORT
+# ══════════════════════════════════════════════════════════════════════════════
+def md_bp_table():
+    rows = ["| BP Size | MariaDB NOTPM | MySQL NOTPM | Delta |",
+            "|---------|--------------|-------------|-------|"]
+    for size, m, q, diff, winner in bp_table_rows:
+        m_fmt = f"**{m:,}**" if winner == "MariaDB" else f"{m:,}"
+        q_fmt = f"**{q:,}**" if winner == "MySQL"   else f"{q:,}"
+        rows.append(f"| {size} | {m_fmt} | {q_fmt} | {diff} |")
+    return "\n".join(rows)
+
+
+def md_vu_table():
+    rows = ["| VU | MariaDB NOTPM | MySQL NOTPM | Delta |",
+            "|----|--------------|-------------|-------|"]
+    for vu, m, q, diff, winner in vu_table_rows:
+        m_fmt = f"**{m:,}**" if winner == "MariaDB" else f"{m:,}"
+        q_fmt = f"**{q:,}**" if winner == "MySQL"   else f"{q:,}"
+        rows.append(f"| {vu} | {m_fmt} | {q_fmt} | {diff} |")
+    return "\n".join(rows)
+
+
+def md_cfg_table():
+    rows = ["| Parameter | MariaDB 12.2.2 | MySQL 8.4.8 | Note |",
+            "|-----------|---------------|------------|------|"]
+    cur_section = None
+    for section, param, m_val, q_val in cfg_rows:
+        if section != cur_section:
+            cur_section = section
+            rows.append(f"| **{section}** | | | |")
+        note = "MariaDB only" if param in MARIA_ONLY else ("differs" if m_val != q_val and m_val and q_val else "")
+        rows.append(f"| `{param}` | `{m_val or 'n/a'}` | `{q_val or 'n/a'}` | {note} |")
+    return "\n".join(rows)
+
+
+def build_md():
+    peak_maria = int(max(maria_bp_y))
+    peak_mysql  = int(max(mysql_bp_y))
+    adv_bp   = (max(maria_bp_y)/max(mysql_bp_y)-1)*100
+    adv_vu   = (mysql_vu_y[-1]/maria_vu_y[-1]-1)*100
+    scale_m  = maria_vu_y[-1]/maria_vu_y[0]
+    scale_q  = mysql_vu_y[-1]/mysql_vu_y[0]
+
+    return f"""# MariaDB vs MySQL -- TPC-C Benchmark Report
+
+**HammerDB 4.12 | TPC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
+**Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
+**OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: {datetime.now().strftime("%Y-%m-%d")}
+
+---
+
+## Executive Summary
+
+| Metric | MariaDB 12.2.2 | MySQL 8.4.8 |
+|--------|---------------|------------|
+| Peak NOTPM (BP 80G, 64 VU) | **{peak_maria:,}** | {peak_mysql:,} |
+| MariaDB advantage @ 80G BP | +{adv_bp:.0f}% | -- |
+| Peak NOTPM (BP 50G, 128 VU) | {int(maria_vu_y[-1]):,} | **{int(mysql_vu_y[-1]):,}** |
+| MySQL advantage @ 128 VU | -- | +{adv_vu:.0f}% |
+| Scaling factor 1->128 VU (BP 50G) | {scale_m:.0f}x | {scale_q:.0f}x |
+
+> **Key findings:** MariaDB 12.2.2 outperforms MySQL 8.4.8 at all buffer pool sizes with 64 VU,
+> delivering up to **{adv_bp:.0f}% more throughput** at 80G BP.
+> MySQL overtakes at high concurrency -- at 128 VU (50G BP) it leads by **{adv_vu:.0f}%**,
+> suggesting more efficient lock/latch management at extreme thread counts.
+
+---
+
+## Buffer Pool Sweep -- 64 VU, 10G-80G
+
+Both engines ran TPC-C with 64 virtual users and buffer pool varied from 10 to 80 GiB.
+The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot data.
+
+![TPC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
+
+![TPC-C Throughput vs Buffer Pool Size -- bar chart](report_assets/fig5_bp_bar.png)
+
+{md_bp_table()}
+
+> MariaDB leads at every buffer pool size. The gap is largest at 70G and 80G where the working
+> set fits mostly in memory. At small pool sizes (10-30G) both engines are I/O-bound and the
+> difference narrows.
+
+---
+
+## Virtual Users Sweep -- BP 50G, 1-128 VU
+
+Concurrency swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
+
+![TPC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
+
+![Concurrency Scaling Efficiency](report_assets/fig4_scaling.png)
+
+{md_vu_table()}
+
+> MariaDB leads at 1-32 VU. MySQL overtakes at 64 VU and extends its lead at 128 VU (+{adv_vu:.0f}%).
+> Both plateau between 64 and 128 VU -- MariaDB essentially saturates while MySQL extracts
+> modest additional throughput, indicating better high-concurrency InnoDB internals.
+
+---
+
+## NOTPM Stability -- BP 80G, 64 VU
+
+Per-second NOTPM for the best BP 80G run from each engine (thick line = 60-sample rolling average).
+
+![NOTPM Over Time](report_assets/fig3_timeseries.png)
+
+> MariaDB shows higher variance in raw per-second NOTPM, typical of its background flush behaviour.
+> MySQL exhibits a flatter profile. Both maintain stable average throughput throughout the run.
+
+---
+
+## Database Configuration
+
+Both engines used the same base `my.cnf` -- only `innodb_buffer_pool_size` varies per sweep step.
+Parameters marked *MariaDB only* are silently ignored by MySQL.
+
+{md_cfg_table()}
+
+---
+
+## Methodology
+
+- **Benchmark:** TPC-C via HammerDB 4.12 (`tpcc_run.tcl`)
+- **Workload:** 1000 warehouses (~100 GB), 60 s ramp-up, 3600 s measurement window
+- **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
+- **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
+- **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPC-C new-order mix is 45%)
+- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps; repeated runs at same size are averaged
+- **VU sweep:** 50 GiB buffer pool, VU in {{1, 2, 4, 8, 16, 32, 64, 128}}
+
+---
+
+*Data source: [Percona-Lab-results/tpcc-benchmark-framework](https://github.com/Percona-Lab-results/tpcc-benchmark-framework)*
+"""
+
+
+md_out = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "REPORT.md")
+with open(md_out, "w", encoding="utf-8") as f:
+    f.write(build_md())
+print(f"Markdown report written -> {md_out}")
