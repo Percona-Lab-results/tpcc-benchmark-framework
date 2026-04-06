@@ -171,6 +171,12 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 
 ## NOTPM Jitter — last 30 min of each run
 
+Peak throughput tells only half the story. A database that delivers high average NOTPM but with
+frequent dips forces the application tier to absorb spikes through connection pooling, retry logic,
+or queuing — adding latency and complexity. In production OLTP systems, low jitter is often more
+operationally valuable than a marginally higher mean: it means predictable response times, simpler
+capacity planning, and fewer tail-latency violations under peak load.
+
 Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
 Box = P25–P75, centre = median, whiskers = P5–P95.
 The tables include **CV%** (Coefficient of Variation = std / mean × 100): a scale-free measure of

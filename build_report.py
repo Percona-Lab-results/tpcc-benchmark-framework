@@ -1079,6 +1079,14 @@ HTML = f"""<!DOCTYPE html>
   <h2>NOTPM Jitter  <span style="font-weight:400;color:#555;font-size:0.85rem">last 30 min · box = P25&#8209;P75 · whiskers = P5&#8209;P95 · no outliers</span></h2>
 
   <p>
+    Peak throughput tells only half the story. A database that delivers high average NOTPM but
+    with frequent dips forces the application tier to absorb spikes through connection pooling,
+    retry logic, or queuing — adding latency and complexity. In production OLTP systems, low
+    jitter is often more operationally valuable than a marginally higher mean: it means
+    predictable response times, simpler capacity planning, and fewer tail-latency violations
+    under peak load.
+  </p>
+  <p>
     Each box shows the distribution of per-second NOTPM samples during the final
     30 minutes of a run. Box edges = P25/P75, centre line = median,
     whiskers = P5/P95. A narrow box means stable throughput; a tall box means high variance.
@@ -1276,6 +1284,12 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 ---
 
 ## NOTPM Jitter — last 30 min of each run
+
+Peak throughput tells only half the story. A database that delivers high average NOTPM but with
+frequent dips forces the application tier to absorb spikes through connection pooling, retry logic,
+or queuing — adding latency and complexity. In production OLTP systems, low jitter is often more
+operationally valuable than a marginally higher mean: it means predictable response times, simpler
+capacity planning, and fewer tail-latency violations under peak load.
 
 Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
 Box = P25–P75, centre = median, whiskers = P5–P95.
