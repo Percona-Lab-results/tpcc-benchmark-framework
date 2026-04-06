@@ -546,7 +546,7 @@ HTML = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MariaDB vs MySQL — TPROC-C Benchmark Report</title>
+<title>MariaDB vs MySQL — TPROC-C Benchmark Report [Work In Progress]</title>
 <style>
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
@@ -737,7 +737,7 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── HEADER ── -->
 <header>
-  <h1>MariaDB vs MySQL — TPROC-C Benchmark Report</h1>
+  <h1>MariaDB vs MySQL — TPROC-C Benchmark Report <span style="font-size:0.55em;font-weight:500;color:#f59e0b;background:#2d1f00;border:1px solid #f59e0b55;border-radius:6px;padding:3px 10px;vertical-align:middle;letter-spacing:0.04em;">[Work In Progress]</span></h1>
   <div class="subtitle">HammerDB 4.12 · TPROC-C · 1000 warehouses · Intel Xeon Gold 6230 (2×20c) · 187 GiB RAM · NVMe 2.9 TB</div>
   <div class="pills">
     <span class="pill pill-maria">MariaDB 12.2.2</span>
@@ -996,7 +996,7 @@ def build_md():
     scale_m  = maria_vu_y[-1]/maria_vu_y[0]
     scale_q  = mysql_vu_y[-1]/mysql_vu_y[0]
 
-    return f"""# MariaDB vs MySQL -- TPROC-C Benchmark Report
+    return f"""# [Work In Progress] MariaDB vs MySQL -- TPROC-C Benchmark Report
 
 **HammerDB 4.12 | TPROC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
 **Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
