@@ -497,6 +497,174 @@ def cfg_html_rows():
     return "\n".join(out)
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  JITTER DATA  — last 30 minutes of each sweep run
+# ══════════════════════════════════════════════════════════════════════════════
+JITTER_WINDOW = 1800  # seconds
+
+
+def last_n_notpm(run: dict, window_secs: int = JITTER_WINDOW) -> list:
+    """Return NOTPM values for the last `window_secs` seconds of active data."""
+    rows = run["qps"]
+    if not rows:
+        return []
+    last_active = None
+    for r in reversed(rows):
+        if float(r.get("tps", 0)) > 0:
+            last_active = datetime.fromisoformat(r["timestamp"])
+            break
+    if last_active is None:
+        return []
+    cutoff = last_active.timestamp() - window_secs
+    values = []
+    for r in rows:
+        t = datetime.fromisoformat(r["timestamp"])
+        v = float(r.get("tps", 0))
+        if v > 0 and t.timestamp() >= cutoff:
+            values.append(v * TPS_TO_NOTPM)
+    return values
+
+
+def jitter_stats(values: list) -> dict:
+    if not values:
+        return {}
+    a = np.array(values)
+    return {
+        "mean": float(np.mean(a)),
+        "std":  float(np.std(a)),
+        "cv":   float(np.std(a) / np.mean(a) * 100),
+        "p5":   float(np.percentile(a, 5)),
+        "p95":  float(np.percentile(a, 95)),
+    }
+
+
+def _sweep_jitter(runs_list, key_fn):
+    data = {"MariaDB": {}, "MySQL": {}}
+    for r in runs_list:
+        if r["db"] not in data:
+            continue
+        key = key_fn(r)
+        if key is None:
+            continue
+        vals = last_n_notpm(r)
+        if vals:
+            data[r["db"]].setdefault(key, []).extend(vals)
+    return data
+
+
+bp_jitter = _sweep_jitter(bp_runs, lambda r: extract_bp_gb(r["label"]))
+vu_jitter = _sweep_jitter(vu_runs, lambda r: r["virtual_users"])
+
+
+def _boxplot_group(ax, keys, jitter_data, colors, w=0.32):
+    offsets = {"MariaDB": -w / 2, "MySQL": w / 2}
+    for db in ("MariaDB", "MySQL"):
+        for i, key in enumerate(keys):
+            vals = jitter_data[db].get(key, [])
+            if not vals:
+                continue
+            ax.boxplot(
+                [v / 1000 for v in vals],
+                positions=[i + offsets[db]],
+                widths=w * 0.85,
+                patch_artist=True,
+                notch=False,
+                showfliers=False,
+                medianprops=dict(color="#ffffff", lw=1.8),
+                boxprops=dict(facecolor=colors[db], alpha=0.75, linewidth=0),
+                whiskerprops=dict(color=colors[db], lw=1.2, alpha=0.7),
+                capprops=dict(color=colors[db], lw=1.5),
+                manage_ticks=False,
+            )
+
+
+# ── FIGURE 6 — Jitter box plots: BP sweep ────────────────────────────────────
+def make_jitter_bp_chart():
+    sizes = sorted(set(maria_bp_x) | set(mysql_bp_x))
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    _boxplot_group(ax, sizes, bp_jitter, {"MariaDB": C_MARIA, "MySQL": C_MYSQL})
+    ax.set_xticks(range(len(sizes)))
+    ax.set_xticklabels([f"{s}G" for s in sizes])
+    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)", labelpad=6)
+    ax.set_ylabel("NOTPM (thousands) — last 30 min", labelpad=6)
+    ax.set_title("NOTPM Jitter — Buffer Pool Sweep  [64 VU · last 30 min of each run]")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
+    ax.grid(axis="y", ls="--", alpha=0.5)
+    ax.legend(handles=[mpatches.Patch(color=C_MARIA, label="MariaDB 12.2.2"),
+                        mpatches.Patch(color=C_MYSQL,  label="MySQL 8.4.8")],
+              loc="upper left")
+    fig.tight_layout()
+    return fig_to_b64(fig, "fig6_jitter_bp.png")
+
+
+# ── FIGURE 7 — Jitter box plots: VU sweep ────────────────────────────────────
+def make_jitter_vu_chart():
+    vus = sorted(set(maria_vu_x) | set(mysql_vu_x))
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    _boxplot_group(ax, vus, vu_jitter, {"MariaDB": C_MARIA, "MySQL": C_MYSQL})
+    ax.set_xticks(range(len(vus)))
+    ax.set_xticklabels([str(v) for v in vus])
+    ax.set_xlabel("Virtual Users", labelpad=6)
+    ax.set_ylabel("NOTPM (thousands) — last 30 min", labelpad=6)
+    ax.set_title("NOTPM Jitter — VU Sweep  [BP 50G · last 30 min of each run]")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
+    ax.grid(axis="y", ls="--", alpha=0.5)
+    ax.legend(handles=[mpatches.Patch(color=C_MARIA, label="MariaDB 12.2.2"),
+                        mpatches.Patch(color=C_MYSQL,  label="MySQL 8.4.8")],
+              loc="upper left")
+    fig.tight_layout()
+    return fig_to_b64(fig, "fig7_jitter_vu.png")
+
+
+# ── Jitter table data ─────────────────────────────────────────────────────────
+def _jitter_rows(jitter_data, key_label_fn):
+    rows = []
+    for key in sorted(set(k for db in jitter_data for k in jitter_data[db])):
+        for db in ("MariaDB", "MySQL"):
+            stats = jitter_stats(jitter_data[db].get(key, []))
+            if stats:
+                rows.append({"config": key_label_fn(key), "db": db, **stats})
+    return rows
+
+bp_jitter_rows = _jitter_rows(bp_jitter, lambda k: f"{k}G")
+vu_jitter_rows = _jitter_rows(vu_jitter, str)
+
+
+def _html_jitter_table(rows):
+    out = [
+        '<table class="data-table">',
+        '<thead><tr>'
+        '<th>Config</th><th>DB</th><th>Mean NOTPM</th>'
+        '<th>Std Dev</th><th>CV%</th><th>P5</th><th>P95</th><th>P5&#8209;P95 Range</th>'
+        '</tr></thead><tbody>',
+    ]
+    for r in rows:
+        clr = 'style="color:#f4a018"' if r["db"] == "MariaDB" else 'style="color:#00758f"'
+        out.append(
+            f'<tr><td>{r["config"]}</td><td {clr}>{r["db"]}</td>'
+            f'<td>{int(r["mean"]):,}</td><td>{int(r["std"]):,}</td>'
+            f'<td>{r["cv"]:.1f}%</td><td>{int(r["p5"]):,}</td>'
+            f'<td>{int(r["p95"]):,}</td><td>{int(r["p95"]-r["p5"]):,}</td></tr>'
+        )
+    out.append('</tbody></table>')
+    return "\n".join(out)
+
+
+def _md_jitter_table(rows):
+    lines = [
+        "| Config | DB | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |",
+        "|--------|----|-----------|---------|-----|-----|-----|-------------|",
+    ]
+    for r in rows:
+        lines.append(
+            f'| {r["config"]} | {r["db"]} | {int(r["mean"]):,} | {int(r["std"]):,}'
+            f' | {r["cv"]:.1f}% | {int(r["p5"]):,} | {int(r["p95"]):,}'
+            f' | {int(r["p95"]-r["p5"]):,} |'
+        )
+    return "\n".join(lines)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  RENDER HTML
 # ══════════════════════════════════════════════════════════════════════════════
@@ -505,7 +673,9 @@ img_bp_line  = make_bp_chart()
 img_bp_bar   = make_bp_bar_chart()
 img_vu_line  = make_vu_chart()
 img_ts       = make_timeseries_chart()
-img_scaling  = make_scaling_chart()
+img_scaling    = make_scaling_chart()
+img_jitter_bp  = make_jitter_bp_chart()
+img_jitter_vu  = make_jitter_vu_chart()
 print("Charts done.")
 
 def table_row(cols, tag="td"):
@@ -897,7 +1067,29 @@ HTML = f"""<!DOCTYPE html>
   </div>
 </section>
 
-<!-- ── SECTION 5: CONFIGURATION ── -->
+
+<!-- ── SECTION 5: JITTER ── -->
+<section>
+  <h2>NOTPM Jitter  <span style="font-weight:400;color:#555;font-size:0.85rem">last 30 min · box = P25&#8209;P75 · whiskers = P5&#8209;P95 · no outliers</span></h2>
+
+  <p>
+    Each box shows the distribution of per-second NOTPM samples during the final
+    30 minutes of a run. Box edges = P25/P75, centre line = median,
+    whiskers = P5/P95. A narrow box means stable throughput; a tall box means high variance.
+  </p>
+
+  <h3>Buffer Pool Sweep</h3>
+  <div class="chart"><img src="data:image/png;base64,{img_jitter_bp}" alt="BP jitter"></div>
+  <div class="chart-caption">Figure 6 — NOTPM distribution per buffer pool size (last 30 min). Outliers excluded.</div>
+  {_html_jitter_table(bp_jitter_rows)}
+
+  <h3 style="margin-top:28px;">Virtual Users Sweep</h3>
+  <div class="chart"><img src="data:image/png;base64,{img_jitter_vu}" alt="VU jitter"></div>
+  <div class="chart-caption">Figure 7 — NOTPM distribution per VU count (last 30 min).</div>
+  {_html_jitter_table(vu_jitter_rows)}
+</section>
+
+<!-- ── SECTION 6: CONFIGURATION ── -->
 <section>
   <h2>Database Configuration</h2>
   <p>
@@ -1071,6 +1263,27 @@ Both engines used the same base `my.cnf` -- only `innodb_buffer_pool_size` varie
 Parameters marked *MariaDB only* are silently ignored by MySQL.
 
 {md_cfg_table()}
+
+---
+
+## NOTPM Jitter — last 30 min of each run
+
+Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
+Box = P25–P75, centre = median, whiskers = P5–P95.
+
+### Buffer Pool Sweep
+
+![NOTPM Jitter — BP Sweep](report_assets/fig6_jitter_bp.png)
+
+{_md_jitter_table(bp_jitter_rows)}
+
+### Virtual Users Sweep
+
+![NOTPM Jitter — VU Sweep](report_assets/fig7_jitter_vu.png)
+
+{_md_jitter_table(vu_jitter_rows)}
+
+---
 
 ---
 
