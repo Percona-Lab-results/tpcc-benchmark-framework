@@ -1,0 +1,29 @@
+# Python / uv
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+**/uv.lock
+**/main.py
+
+# Large log files (keep CSVs and small files)
+results/*/mpstat.log
+results/*/iostat.log
+results/*/vmstat.log
+results/*/hammerdb.log
+results/*/mariadb_variables.txt
+results/*/mariadb_status_before.txt
+results/*/mariadb_status_after.txt
+results/*/innodb_status.txt
+
+# Temp files
+*.bak
+*.tmp
+*.swp
+build.log
+sweep.log
+/tmp/
+
+# Docker data
+/data/
+.claude/

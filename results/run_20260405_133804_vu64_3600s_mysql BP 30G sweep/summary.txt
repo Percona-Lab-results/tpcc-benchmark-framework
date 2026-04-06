@@ -1,0 +1,40 @@
+=== Benchmark Run Summary ===
+Date:       2026-04-05T14:41:41+00:00
+Label:      mysql BP 30G sweep
+Warehouses: 1000
+VUs:        64
+Ramp-up:    60s
+Duration:   3600s
+
+Result:     Vuser 1:TEST RESULT : System achieved 205462 NOPM from 477390 MariaDB TPM
+
+=== NOPM Statistics ===
+  Samples:  3600
+  Avg NOPM: 1775398159
+  Min NOPM: 1775396346
+  Max NOPM: 1775399973
+
+=== QPS Statistics ===
+  Samples: 3515
+  Avg QPS: 23742
+  Min QPS: 3
+  Max QPS: 33555
+
+=== Files ===
+  bench_params.json                   335
+  hammerdb.log                        193K
+  innodb_status.txt                   10K
+  iostat.log                          2.9M
+  mariadb.cnf                         5.7K
+  mariadb_status_after.txt            12K
+  mariadb_status_before.txt           12K
+  mariadb_variables.txt               18K
+  mariadb_version.txt                 6
+  mpstat.log                          29M
+  nopm_samples.csv                    117K
+  qps.csv                             280K
+  result.txt                          75
+  summary.txt                         466
+  system_info.txt                     4.0K
+  tpcc_run.tcl                        1.6K
+  vmstat.log                          380K
