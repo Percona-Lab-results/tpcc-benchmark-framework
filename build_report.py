@@ -206,6 +206,7 @@ def make_bp_chart():
     ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend(loc="upper left")
     ax.set_xlim(8, 84)
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     return fig_to_b64(fig, "fig1_bp_line.png")
 
@@ -237,6 +238,7 @@ def make_vu_chart():
     ax.grid(axis="y", ls="--", alpha=0.5)
     ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend(loc="upper left")
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     return fig_to_b64(fig, "fig2_vu_line.png")
 
@@ -268,6 +270,7 @@ def make_timeseries_chart():
     ax.grid(axis="y", ls="--", alpha=0.5)
     ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend()
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     return fig_to_b64(fig, "fig3_timeseries.png")
 
@@ -328,6 +331,7 @@ def make_bp_bar_chart():
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
     ax.grid(axis="y", ls="--", alpha=0.5)
     ax.legend()
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     return fig_to_b64(fig, "fig5_bp_bar.png")
 
@@ -594,6 +598,7 @@ def make_jitter_bp_chart():
     ax.legend(handles=[mpatches.Patch(color=C_MARIA, label="MariaDB 12.2.2"),
                         mpatches.Patch(color=C_MYSQL,  label="MySQL 8.4.8")],
               loc="upper left")
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     return fig_to_b64(fig, "fig6_jitter_bp.png")
 
@@ -613,6 +618,7 @@ def make_jitter_vu_chart():
     ax.legend(handles=[mpatches.Patch(color=C_MARIA, label="MariaDB 12.2.2"),
                         mpatches.Patch(color=C_MYSQL,  label="MySQL 8.4.8")],
               loc="upper left")
+    ax.set_ylim(bottom=0)
     fig.tight_layout()
     return fig_to_b64(fig, "fig7_jitter_vu.png")
 
