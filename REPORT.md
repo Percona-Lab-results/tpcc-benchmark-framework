@@ -2,7 +2,7 @@
 
 **HammerDB 4.12 | TPROC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
 **Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
-**OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: 2026-04-06
+**OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: 2026-04-07
 
 ---
 

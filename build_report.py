@@ -14,29 +14,36 @@ import matplotlib.patches as mpatches
 from matplotlib.gridspec import GridSpec
 
 # ── colours ──────────────────────────────────────────────────────────────────
-C_MARIA  = "#f4a018"   # MariaDB orange
-C_MYSQL  = "#00758f"   # MySQL teal
-C_GRID   = "#2a2d3a"
-C_BG     = "#0f1117"
-C_FG     = "#e0e0e0"
-C_AXIS   = "#555566"
+C_MARIA  = "#f97316"   # MariaDB vivid orange
+C_MYSQL  = "#06b6d4"   # MySQL cyan
+C_BG     = "#080b14"   # Deep dark background
+C_CARD   = "#0d1117"   # Chart / card area
+C_GRID   = "#1c2438"   # Subtle grid lines
+C_FG     = "#e4e8f0"   # Primary text
+C_DIM    = "#64748b"   # Dimmed labels / ticks
+C_AXIS   = "#2a3348"   # Spine / border colour
 
 plt.rcParams.update({
-    "figure.facecolor": C_BG,
-    "axes.facecolor":   C_BG,
-    "axes.edgecolor":   C_AXIS,
-    "axes.labelcolor":  C_FG,
-    "text.color":       C_FG,
-    "xtick.color":      C_FG,
-    "ytick.color":      C_FG,
-    "grid.color":       C_GRID,
-    "grid.linewidth":   0.6,
-    "legend.facecolor": "#1a1d27",
-    "legend.edgecolor": C_GRID,
-    "font.family":      "DejaVu Sans",
-    "font.size":        11,
-    "axes.titlesize":   13,
-    "axes.titlepad":    12,
+    "figure.facecolor":  C_BG,
+    "axes.facecolor":    C_CARD,
+    "axes.edgecolor":    C_AXIS,
+    "axes.labelcolor":   C_DIM,
+    "text.color":        C_FG,
+    "xtick.color":       C_DIM,
+    "ytick.color":       C_DIM,
+    "xtick.major.size":  0,
+    "ytick.major.size":  0,
+    "grid.color":        C_GRID,
+    "grid.linewidth":    0.7,
+    "legend.facecolor":  C_CARD,
+    "legend.edgecolor":  C_AXIS,
+    "legend.framealpha": 1.0,
+    "legend.fontsize":   10,
+    "font.family":       "DejaVu Sans",
+    "font.size":         11,
+    "axes.titlesize":    13,
+    "axes.titlepad":     16,
+    "axes.labelsize":    10,
 })
 
 # TPS (commits+rollbacks/s) → NOTPM (new orders/min): TPROC-C new-order mix = 45%
@@ -61,7 +68,7 @@ _os.makedirs(ASSETS_DIR, exist_ok=True)
 
 def fig_to_b64(fig, filename: str = None) -> str:
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", facecolor=C_BG)
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight", pad_inches=0.28, facecolor=C_BG)
     if filename:
         path = _os.path.join(ASSETS_DIR, filename)
         with open(path, "wb") as f:
@@ -98,6 +105,18 @@ def rolling_avg(values, window=30):
         hi = min(len(values), i + window // 2 + 1)
         result.append(np.mean(values[lo:hi]))
     return result
+
+
+def _clean_axes(ax):
+    """Remove top/right spines, apply clean grid, kill tick marks."""
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(C_AXIS)
+    ax.spines["bottom"].set_color(C_AXIS)
+    ax.yaxis.grid(True, color=C_GRID, lw=0.7, ls=":", alpha=0.9)
+    ax.xaxis.grid(False)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="both", length=0, pad=6)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -182,32 +201,39 @@ eff_ref_y  = [1, 128]
 #  FIGURE 1 — BP sweep line chart
 # ══════════════════════════════════════════════════════════════════════════════
 def make_bp_chart():
-    fig, ax = plt.subplots(figsize=(9, 5.2))
-    ax.plot(maria_bp_x, [y/1000 for y in maria_bp_y],
-            color=C_MARIA, lw=2.5, marker="o", ms=7, label="MariaDB 12.2.2")
-    ax.plot(mysql_bp_x,  [y/1000 for y in mysql_bp_y],
-            color=C_MYSQL,  lw=2.5, marker="s", ms=7, label="MySQL 8.4.8")
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    ys_m = [y/1000 for y in maria_bp_y]
+    ys_q = [y/1000 for y in mysql_bp_y]
 
-    # annotate last point
-    ax.annotate(f"{maria_bp_y[-1]/1000:.1f}k", (maria_bp_x[-1], maria_bp_y[-1]/1000),
-                textcoords="offset points", xytext=(8, 0),
-                color=C_MARIA, fontsize=9, va="center")
-    ax.annotate(f"{mysql_bp_y[-1]/1000:.1f}k", (mysql_bp_x[-1],  mysql_bp_y[-1]/1000),
-                textcoords="offset points", xytext=(8, -8),
-                color=C_MYSQL,  fontsize=9, va="center")
+    ax.fill_between(maria_bp_x, ys_m, alpha=0.10, color=C_MARIA, lw=0)
+    ax.fill_between(mysql_bp_x, ys_q, alpha=0.10, color=C_MYSQL, lw=0)
+    ax.plot(maria_bp_x, ys_m, color=C_MARIA, lw=2.8,
+            marker="o", ms=8, markerfacecolor=C_BG, markeredgecolor=C_MARIA,
+            markeredgewidth=2.2, label="MariaDB 12.2.2", zorder=5)
+    ax.plot(mysql_bp_x, ys_q, color=C_MYSQL, lw=2.8,
+            marker="s", ms=8, markerfacecolor=C_BG, markeredgecolor=C_MYSQL,
+            markeredgewidth=2.2, label="MySQL 8.4.8", zorder=5)
 
-    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)", labelpad=6)
-    ax.set_ylabel("Average NOTPM (thousands)", labelpad=6)
+    ax.annotate(f"{maria_bp_y[-1]/1000:.1f}k", (maria_bp_x[-1], ys_m[-1]),
+                textcoords="offset points", xytext=(10, 0), va="center",
+                color=C_MARIA, fontsize=9,
+                bbox=dict(boxstyle="round,pad=0.3", fc=C_CARD, ec=C_MARIA+"55", lw=0.8))
+    ax.annotate(f"{mysql_bp_y[-1]/1000:.1f}k", (mysql_bp_x[-1], ys_q[-1]),
+                textcoords="offset points", xytext=(10, -10), va="center",
+                color=C_MYSQL, fontsize=9,
+                bbox=dict(boxstyle="round,pad=0.3", fc=C_CARD, ec=C_MYSQL+"55", lw=0.8))
+
+    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)")
+    ax.set_ylabel("Average NOTPM (thousands)")
     ax.set_title("TPROC-C Throughput vs Buffer Pool Size  [64 VU · 3600 s]")
     ax.set_xticks(maria_bp_x)
     ax.set_xticklabels([f"{x}G" for x in maria_bp_x])
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
-    ax.grid(axis="y", ls="--", alpha=0.5)
-    ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend(loc="upper left")
     ax.set_xlim(8, 84)
     ax.set_ylim(bottom=0)
-    fig.tight_layout()
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig1_bp_line.png")
 
 
@@ -215,31 +241,39 @@ def make_bp_chart():
 #  FIGURE 2 — VU sweep line chart
 # ══════════════════════════════════════════════════════════════════════════════
 def make_vu_chart():
-    fig, ax = plt.subplots(figsize=(9, 5.2))
-    ax.plot(maria_vu_x, [y/1000 for y in maria_vu_y],
-            color=C_MARIA, lw=2.5, marker="o", ms=7, label="MariaDB 12.2.2")
-    ax.plot(mysql_vu_x,  [y/1000 for y in mysql_vu_y],
-            color=C_MYSQL,  lw=2.5, marker="s", ms=7, label="MySQL 8.4.8")
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    ys_m = [y/1000 for y in maria_vu_y]
+    ys_q = [y/1000 for y in mysql_vu_y]
 
-    ax.annotate(f"{maria_vu_y[-1]/1000:.1f}k", (maria_vu_x[-1], maria_vu_y[-1]/1000),
-                textcoords="offset points", xytext=(-48, 6),
-                color=C_MARIA, fontsize=9)
-    ax.annotate(f"{mysql_vu_y[-1]/1000:.1f}k",  (mysql_vu_x[-1],  mysql_vu_y[-1]/1000),
-                textcoords="offset points", xytext=(6, 0),
-                color=C_MYSQL,  fontsize=9, va="center")
+    ax.fill_between(maria_vu_x, ys_m, alpha=0.10, color=C_MARIA, lw=0)
+    ax.fill_between(mysql_vu_x, ys_q, alpha=0.10, color=C_MYSQL, lw=0)
+    ax.plot(maria_vu_x, ys_m, color=C_MARIA, lw=2.8,
+            marker="o", ms=8, markerfacecolor=C_BG, markeredgecolor=C_MARIA,
+            markeredgewidth=2.2, label="MariaDB 12.2.2", zorder=5)
+    ax.plot(mysql_vu_x, ys_q, color=C_MYSQL, lw=2.8,
+            marker="s", ms=8, markerfacecolor=C_BG, markeredgecolor=C_MYSQL,
+            markeredgewidth=2.2, label="MySQL 8.4.8", zorder=5)
 
-    ax.set_xlabel("Virtual Users (log scale)", labelpad=6)
-    ax.set_ylabel("Average NOTPM (thousands)", labelpad=6)
+    ax.annotate(f"{maria_vu_y[-1]/1000:.1f}k", (maria_vu_x[-1], ys_m[-1]),
+                textcoords="offset points", xytext=(-52, 8),
+                color=C_MARIA, fontsize=9,
+                bbox=dict(boxstyle="round,pad=0.3", fc=C_CARD, ec=C_MARIA+"55", lw=0.8))
+    ax.annotate(f"{mysql_vu_y[-1]/1000:.1f}k", (mysql_vu_x[-1], ys_q[-1]),
+                textcoords="offset points", xytext=(8, 0), va="center",
+                color=C_MYSQL, fontsize=9,
+                bbox=dict(boxstyle="round,pad=0.3", fc=C_CARD, ec=C_MYSQL+"55", lw=0.8))
+
+    ax.set_xlabel("Virtual Users (log scale)")
+    ax.set_ylabel("Average NOTPM (thousands)")
     ax.set_title("TPROC-C Throughput vs Concurrency  [BP 50G · 3600 s]")
     ax.set_xscale("log", base=2)
     ax.set_xticks(maria_vu_x)
     ax.set_xticklabels([str(x) for x in maria_vu_x])
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
-    ax.grid(axis="y", ls="--", alpha=0.5)
-    ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend(loc="upper left")
     ax.set_ylim(bottom=0)
-    fig.tight_layout()
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig2_vu_line.png")
 
 
@@ -247,7 +281,7 @@ def make_vu_chart():
 #  FIGURE 3 — TPS time-series (BP 80G sweep run)
 # ══════════════════════════════════════════════════════════════════════════════
 def make_timeseries_chart():
-    fig, ax = plt.subplots(figsize=(11, 4.8))
+    fig, ax = plt.subplots(figsize=(12, 5.0))
 
     for run, color, label in [
         (ts_maria, C_MARIA, "MariaDB 12.2.2"),
@@ -259,19 +293,18 @@ def make_timeseries_chart():
         if not et:
             continue
         smooth = rolling_avg(tps, window=60)
-        ax.fill_between(et, [v/1000 for v in tps], alpha=0.08, color=color)
-        ax.plot(et, [v/1000 for v in tps],   color=color, lw=0.4, alpha=0.35)
-        ax.plot(et, [v/1000 for v in smooth], color=color, lw=2,   label=label)
+        ax.fill_between(et, [v/1000 for v in tps], alpha=0.07, color=color, lw=0)
+        ax.plot(et, [v/1000 for v in tps],   color=color, lw=0.5, alpha=0.25)
+        ax.plot(et, [v/1000 for v in smooth], color=color, lw=2.4, label=label)
 
-    ax.set_xlabel("Elapsed time (minutes)", labelpad=6)
-    ax.set_ylabel("NOTPM (thousands)", labelpad=6)
+    ax.set_xlabel("Elapsed time (minutes)")
+    ax.set_ylabel("NOTPM (thousands)")
     ax.set_title("NOTPM Over Time — Buffer Pool 80G  [64 VU · 3600 s]")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
-    ax.grid(axis="y", ls="--", alpha=0.5)
-    ax.grid(axis="x", ls=":", alpha=0.3)
     ax.legend()
     ax.set_ylim(bottom=0)
-    fig.tight_layout()
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig3_timeseries.png")
 
 
@@ -279,26 +312,32 @@ def make_timeseries_chart():
 #  FIGURE 4 — Scaling efficiency (VU sweep normalised to 1 VU)
 # ══════════════════════════════════════════════════════════════════════════════
 def make_scaling_chart():
-    fig, ax = plt.subplots(figsize=(9, 5.2))
+    fig, ax = plt.subplots(figsize=(10, 5.5))
 
-    ax.plot(eff_ref_x, eff_ref_y, color=C_AXIS, lw=1.2, ls="--",
-            label="Linear (ideal)", alpha=0.6)
-    ax.plot(maria_eff_x, maria_eff_y, color=C_MARIA, lw=2.5,
-            marker="o", ms=7, label="MariaDB 12.2.2")
-    ax.plot(mysql_eff_x,  mysql_eff_y,  color=C_MYSQL,  lw=2.5,
-            marker="s", ms=7, label="MySQL 8.4.8")
+    ax.plot(eff_ref_x, eff_ref_y, color=C_AXIS, lw=1.5, ls="--",
+            label="Linear (ideal)", alpha=0.5, zorder=1)
+    ax.plot(maria_eff_x, maria_eff_y, color=C_MARIA, lw=2.8,
+            marker="o", ms=8, markerfacecolor=C_BG, markeredgecolor=C_MARIA,
+            markeredgewidth=2.2, label="MariaDB 12.2.2", zorder=5)
+    ax.plot(mysql_eff_x, mysql_eff_y, color=C_MYSQL, lw=2.8,
+            marker="s", ms=8, markerfacecolor=C_BG, markeredgecolor=C_MYSQL,
+            markeredgewidth=2.2, label="MySQL 8.4.8", zorder=5)
 
-    ax.set_xlabel("Virtual Users (log scale)", labelpad=6)
-    ax.set_ylabel("NOTPM speedup vs 1 VU", labelpad=6)
+    ax.set_xlabel("Virtual Users (log scale)")
+    ax.set_ylabel("NOTPM speedup vs 1 VU")
     ax.set_title("Concurrency Scaling Efficiency  [BP 50G · 3600 s]")
     ax.set_xscale("log", base=2)
     ax.set_xticks(maria_vu_x)
     ax.set_xticklabels([str(x) for x in maria_vu_x])
     ax.set_yscale("log", base=2)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}×"))
-    ax.grid(axis="both", ls="--", alpha=0.4)
+    ax.yaxis.grid(True, color=C_GRID, lw=0.7, ls=":", alpha=0.9)
+    ax.xaxis.grid(True, color=C_GRID, lw=0.7, ls=":", alpha=0.6)
     ax.legend()
-    fig.tight_layout()
+    _clean_axes(ax)
+    # restore both grids overridden by _clean_axes
+    ax.xaxis.grid(True, color=C_GRID, lw=0.7, ls=":", alpha=0.6)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig4_scaling.png")
 
 
@@ -311,28 +350,28 @@ def make_bp_bar_chart():
     mysql_vals  = [np.mean(bp_data["MySQL"].get(s,   [0])) * TPS_TO_NOTPM / 1000 for s in all_sizes]
 
     x = np.arange(len(all_sizes))
-    w = 0.35
+    w = 0.36
 
-    fig, ax = plt.subplots(figsize=(11, 5))
-    b1 = ax.bar(x - w/2, maria_vals, w, color=C_MARIA, label="MariaDB 12.2.2", alpha=0.9)
-    b2 = ax.bar(x + w/2, mysql_vals,  w, color=C_MYSQL,  label="MySQL 8.4.8",   alpha=0.9)
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    b1 = ax.bar(x - w/2, maria_vals, w, color=C_MARIA, label="MariaDB 12.2.2", lw=0, zorder=3)
+    b2 = ax.bar(x + w/2, mysql_vals,  w, color=C_MYSQL,  label="MySQL 8.4.8",   lw=0, zorder=3)
 
     for bar in list(b1) + list(b2):
         h = bar.get_height()
         if h > 0:
-            ax.text(bar.get_x() + bar.get_width()/2, h + 0.15,
-                    f"{h:.1f}k", ha="center", va="bottom", fontsize=7.5, color=C_FG)
+            ax.text(bar.get_x() + bar.get_width()/2, h + h * 0.012,
+                    f"{h:.1f}k", ha="center", va="bottom", fontsize=8, color=C_FG, fontweight="600")
 
     ax.set_xticks(x)
     ax.set_xticklabels([f"{s}G" for s in all_sizes])
-    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)", labelpad=6)
-    ax.set_ylabel("Average NOTPM (thousands)", labelpad=6)
+    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)")
+    ax.set_ylabel("Average NOTPM (thousands)")
     ax.set_title("TPROC-C Throughput — Buffer Pool Sweep  [64 VU · 3600 s]")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
-    ax.grid(axis="y", ls="--", alpha=0.5)
     ax.legend()
     ax.set_ylim(bottom=0)
-    fig.tight_layout()
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig5_bp_bar.png")
 
 
@@ -564,6 +603,7 @@ vu_jitter = _sweep_jitter(vu_runs, lambda r: r["virtual_users"])
 def _boxplot_group(ax, keys, jitter_data, colors, w=0.32):
     offsets = {"MariaDB": -w / 2, "MySQL": w / 2}
     for db in ("MariaDB", "MySQL"):
+        col = colors[db]
         for i, key in enumerate(keys):
             vals = jitter_data[db].get(key, [])
             if not vals:
@@ -575,10 +615,10 @@ def _boxplot_group(ax, keys, jitter_data, colors, w=0.32):
                 patch_artist=True,
                 notch=False,
                 showfliers=False,
-                medianprops=dict(color="#ffffff", lw=1.8),
-                boxprops=dict(facecolor=colors[db], alpha=0.75, linewidth=0),
-                whiskerprops=dict(color=colors[db], lw=1.2, alpha=0.7),
-                capprops=dict(color=colors[db], lw=1.5),
+                medianprops=dict(color="#ffffff", lw=2.2),
+                boxprops=dict(facecolor=col + "28", alpha=1, linewidth=1.5, edgecolor=col),
+                whiskerprops=dict(color=col, lw=1.4, alpha=0.8, linestyle=(0, (4, 3))),
+                capprops=dict(color=col, lw=2.0),
                 manage_ticks=False,
             )
 
@@ -586,40 +626,40 @@ def _boxplot_group(ax, keys, jitter_data, colors, w=0.32):
 # ── FIGURE 6 — Jitter box plots: BP sweep ────────────────────────────────────
 def make_jitter_bp_chart():
     sizes = sorted(set(maria_bp_x) | set(mysql_bp_x))
-    fig, ax = plt.subplots(figsize=(12, 5.5))
+    fig, ax = plt.subplots(figsize=(13, 5.8))
     _boxplot_group(ax, sizes, bp_jitter, {"MariaDB": C_MARIA, "MySQL": C_MYSQL})
     ax.set_xticks(range(len(sizes)))
     ax.set_xticklabels([f"{s}G" for s in sizes])
-    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)", labelpad=6)
-    ax.set_ylabel("NOTPM (thousands) — last 30 min", labelpad=6)
+    ax.set_xlabel("InnoDB Buffer Pool Size (GiB)")
+    ax.set_ylabel("NOTPM (thousands) — last 30 min")
     ax.set_title("NOTPM Jitter — Buffer Pool Sweep  [64 VU · last 30 min of each run]")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
-    ax.grid(axis="y", ls="--", alpha=0.5)
     ax.legend(handles=[mpatches.Patch(color=C_MARIA, label="MariaDB 12.2.2"),
                         mpatches.Patch(color=C_MYSQL,  label="MySQL 8.4.8")],
               loc="upper left")
     ax.set_ylim(bottom=0)
-    fig.tight_layout()
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig6_jitter_bp.png")
 
 
 # ── FIGURE 7 — Jitter box plots: VU sweep ────────────────────────────────────
 def make_jitter_vu_chart():
     vus = sorted(set(maria_vu_x) | set(mysql_vu_x))
-    fig, ax = plt.subplots(figsize=(12, 5.5))
+    fig, ax = plt.subplots(figsize=(13, 5.8))
     _boxplot_group(ax, vus, vu_jitter, {"MariaDB": C_MARIA, "MySQL": C_MYSQL})
     ax.set_xticks(range(len(vus)))
     ax.set_xticklabels([str(v) for v in vus])
-    ax.set_xlabel("Virtual Users", labelpad=6)
-    ax.set_ylabel("NOTPM (thousands) — last 30 min", labelpad=6)
+    ax.set_xlabel("Virtual Users")
+    ax.set_ylabel("NOTPM (thousands) — last 30 min")
     ax.set_title("NOTPM Jitter — VU Sweep  [BP 50G · last 30 min of each run]")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
-    ax.grid(axis="y", ls="--", alpha=0.5)
     ax.legend(handles=[mpatches.Patch(color=C_MARIA, label="MariaDB 12.2.2"),
                         mpatches.Patch(color=C_MYSQL,  label="MySQL 8.4.8")],
               loc="upper left")
     ax.set_ylim(bottom=0)
-    fig.tight_layout()
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig7_jitter_vu.png")
 
 
@@ -646,7 +686,7 @@ def _html_jitter_table(rows):
         '</tr></thead><tbody>',
     ]
     for r in rows:
-        clr = 'style="color:#f4a018"' if r["db"] == "MariaDB" else 'style="color:#00758f"'
+        clr = 'style="color:#f97316"' if r["db"] == "MariaDB" else 'style="color:#06b6d4"'
         out.append(
             f'<tr><td>{r["config"]}</td><td {clr}>{r["db"]}</td>'
             f'<td>{int(r["mean"]):,}</td><td>{int(r["std"]):,}</td>'
@@ -726,171 +766,177 @@ HTML = f"""<!DOCTYPE html>
 <style>
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: #0f1117;
-    color: #d0d0d8;
-    line-height: 1.6;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #080b14;
+    color: #cdd5e0;
+    line-height: 1.65;
   }}
-  a {{ color: #7eb8da; }}
+  a {{ color: #5b9bd5; }}
 
   /* ── layout ── */
-  .page {{ max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }}
+  .page {{ max-width: 1120px; margin: 0 auto; padding: 48px 28px 96px; }}
 
   /* ── header ── */
   header {{
-    border-bottom: 2px solid #2a2d3a;
-    padding-bottom: 20px;
-    margin-bottom: 36px;
+    border-bottom: 1px solid #1c2438;
+    padding-bottom: 24px;
+    margin-bottom: 52px;
   }}
   header h1 {{
     font-size: 1.75rem;
     font-weight: 700;
-    color: #e8e8f0;
-    letter-spacing: -0.02em;
+    color: #eef0f8;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
   }}
   header .subtitle {{
-    color: #888;
-    font-size: 0.9rem;
-    margin-top: 4px;
+    color: #4a5870;
+    font-size: 0.875rem;
+    margin-top: 8px;
+    letter-spacing: 0.01em;
   }}
   .pills {{
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 14px;
+    margin-top: 18px;
   }}
   .pill {{
-    font-size: 0.78rem;
-    padding: 3px 10px;
+    font-size: 0.74rem;
+    padding: 3px 11px;
     border-radius: 20px;
-    border: 1px solid #2a2d3a;
-    color: #aaa;
+    border: 1px solid #1c2438;
+    color: #4a5870;
   }}
-  .pill-maria {{ border-color: #f4a018; color: #f4a018; }}
-  .pill-mysql  {{ border-color: #00758f; color: #00758f; }}
+  .pill-maria {{ border-color: #f97316; color: #f97316; }}
+  .pill-mysql  {{ border-color: #06b6d4; color: #06b6d4; }}
 
   /* ── sections ── */
-  section {{ margin-bottom: 52px; }}
+  section {{ margin-bottom: 64px; }}
   section h2 {{
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #7eb8da;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #3d5a78;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 16px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #2a2d3a;
+    letter-spacing: 0.13em;
+    margin-bottom: 22px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1c2438;
   }}
   section h3 {{
-    font-size: 1rem;
+    font-size: 0.92rem;
     font-weight: 600;
-    color: #c0c0cc;
-    margin: 28px 0 10px;
+    color: #9aa8be;
+    margin: 34px 0 12px;
   }}
-  p {{ color: #999; font-size: 0.9rem; margin-bottom: 10px; max-width: 760px; }}
-  p strong {{ color: #d0d0d8; }}
+  p {{ color: #7a8898; font-size: 0.875rem; margin-bottom: 12px; max-width: 800px; line-height: 1.75; }}
+  p strong {{ color: #cdd5e0; }}
 
   /* ── key metrics bar ── */
   .kpi-grid {{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 14px;
-    margin-bottom: 28px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
   }}
   .kpi {{
-    background: #1a1d27;
-    border: 1px solid #2a2d3a;
-    border-radius: 10px;
-    padding: 16px 18px;
+    background: #0d1117;
+    border: 1px solid #1c2438;
+    border-radius: 12px;
+    padding: 18px 20px;
+    transition: border-color 0.15s ease;
   }}
-  .kpi .kpi-label {{ font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.06em; }}
-  .kpi .kpi-val   {{ font-size: 1.6rem; font-weight: 700; margin: 2px 0 0; }}
-  .kpi .kpi-sub   {{ font-size: 0.75rem; color: #666; margin-top: 2px; }}
-  .kpi-val.maria  {{ color: #f4a018; }}
-  .kpi-val.mysql  {{ color: #00758f; }}
+  .kpi:hover {{ border-color: #2a3f58; }}
+  .kpi .kpi-label {{ font-size: 0.7rem; color: #3d5068; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }}
+  .kpi .kpi-val   {{ font-size: 1.65rem; font-weight: 700; margin: 5px 0 2px; letter-spacing: -0.02em; }}
+  .kpi .kpi-sub   {{ font-size: 0.7rem; color: #3d5068; margin-top: 2px; }}
+  .kpi-val.maria  {{ color: #f97316; }}
+  .kpi-val.mysql  {{ color: #06b6d4; }}
   .kpi-val.green  {{ color: #4ade80; }}
 
   /* ── chart ── */
-  .chart {{ margin: 20px 0 8px; border-radius: 8px; overflow: hidden; }}
+  .chart {{ margin: 22px 0 8px; border-radius: 10px; overflow: hidden; border: 1px solid #1c2438; }}
   .chart img {{ width: 100%; display: block; }}
   .chart-caption {{
-    font-size: 0.78rem;
-    color: #555;
-    margin-top: 4px;
-    margin-bottom: 24px;
+    font-size: 0.74rem;
+    color: #364558;
+    margin-top: 7px;
+    margin-bottom: 28px;
+    font-style: italic;
   }}
 
   /* ── two-up charts ── */
-  .two-up {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
+  .two-up {{ display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }}
   @media (max-width: 720px) {{ .two-up {{ grid-template-columns: 1fr; }} }}
 
   /* ── table ── */
   .data-table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
-    margin-top: 14px;
+    font-size: 0.84rem;
+    margin-top: 16px;
   }}
   .data-table th {{
     text-align: left;
-    color: #7eb8da;
-    padding: 8px 12px;
-    border-bottom: 1px solid #2a2d3a;
+    color: #3d5a78;
+    padding: 10px 14px;
+    border-bottom: 1px solid #1c2438;
     font-weight: 600;
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
   }}
   .data-table td {{
-    padding: 7px 12px;
-    border-bottom: 1px solid #1a1d27;
+    padding: 8px 14px;
+    border-bottom: 1px solid #0d1117;
   }}
-  .data-table tr:hover td {{ background: #1a1d27; }}
-  .data-table td.win {{ font-weight: 700; color: #e0e0e0; }}
-  .data-table td.pos {{ color: #f4a018; font-weight: 600; }}
-  .data-table td.neg {{ color: #00758f; font-weight: 600; }}
-  .data-table td:first-child {{ color: #888; }}
+  .data-table tbody tr:nth-child(even) td {{ background: #090c14; }}
+  .data-table tr:hover td {{ background: #101828 !important; }}
+  .data-table td.win {{ font-weight: 700; color: #eef0f8; }}
+  .data-table td.pos {{ color: #f97316; font-weight: 600; }}
+  .data-table td.neg {{ color: #06b6d4; font-weight: 600; }}
+  .data-table td:first-child {{ color: #4a5870; }}
 
   /* ── callout ── */
   .callout {{
-    background: #1a1d27;
-    border-left: 3px solid #7eb8da;
-    border-radius: 0 8px 8px 0;
-    padding: 14px 18px;
-    font-size: 0.88rem;
-    color: #aaa;
-    margin: 20px 0;
-    max-width: 760px;
+    background: #0d1117;
+    border-left: 3px solid #1c3a58;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 20px;
+    font-size: 0.875rem;
+    color: #7a8898;
+    margin: 24px 0;
+    max-width: 820px;
   }}
-  .callout strong {{ color: #e0e0e0; }}
+  .callout strong {{ color: #cdd5e0; }}
 
   /* ── config table ── */
   .cfg-table {{ font-size: 0.82rem; }}
   .cfg-table .cfg-section td {{
-    background: #13161f;
-    color: #7eb8da;
-    font-size: 0.72rem;
+    background: #060810;
+    color: #3d5a78;
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 10px 12px 4px;
+    letter-spacing: 0.11em;
+    padding: 12px 14px 5px;
     font-weight: 700;
     border-bottom: none;
   }}
-  .cfg-table .cfg-param {{ font-family: 'Consolas','SF Mono',monospace; color: #c0c0cc; }}
-  .cfg-table .cfg-maria td {{ background: #1f1a10; }}
-  .cfg-table .cfg-maria .cfg-param {{ color: #f4a018; }}
-  .cfg-table .cfg-diff td {{ background: #1a1427; }}
+  .cfg-table .cfg-param {{ font-family: 'Consolas','SF Mono',monospace; color: #a8b4c8; }}
+  .cfg-table .cfg-maria td {{ background: #0f0b06; }}
+  .cfg-table .cfg-maria .cfg-param {{ color: #f97316; }}
+  .cfg-table .cfg-diff td {{ background: #0a0814; }}
   .cfg-table .cfg-diff .cfg-param {{ color: #a78bfa; }}
   .cfg-table td:nth-child(2), .cfg-table td:nth-child(3) {{
     font-family: 'Consolas','SF Mono',monospace;
-    color: #9090a0;
+    color: #667080;
   }}
-  .cfg-na {{ color: #3a3d4a; font-style: italic; }}
+  .cfg-na {{ color: #2a3348; font-style: italic; }}
   .badge-maria {{
-    font-size: 0.65rem;
-    background: #2a1f08;
-    border: 1px solid #f4a01840;
-    color: #f4a018;
+    font-size: 0.6rem;
+    background: #1a1006;
+    border: 1px solid #f9731630;
+    color: #f97316;
     padding: 1px 5px;
     border-radius: 3px;
     margin-left: 6px;
@@ -900,10 +946,10 @@ HTML = f"""<!DOCTYPE html>
   }}
 
   footer {{
-    border-top: 1px solid #2a2d3a;
-    padding-top: 20px;
-    font-size: 0.78rem;
-    color: #444;
+    border-top: 1px solid #1c2438;
+    padding-top: 24px;
+    font-size: 0.74rem;
+    color: #283040;
     text-align: center;
   }}
 </style>
@@ -975,7 +1021,7 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── SECTION 2: BUFFER POOL SWEEP ── -->
 <section>
-  <h2>Buffer Pool Sweep  <span style="font-weight:400;color:#555;font-size:0.85rem">64 VU · 10G – 80G</span></h2>
+  <h2>Buffer Pool Sweep  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">64 VU · 10G – 80G</span></h2>
 
   <p>
     Both databases ran TPROC-C with 64 virtual users and a fixed buffer pool varying from 10 GiB to 80 GiB.
@@ -1013,7 +1059,7 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── SECTION 3: VIRTUAL USERS SWEEP ── -->
 <section>
-  <h2>Virtual Users Sweep  <span style="font-weight:400;color:#555;font-size:0.85rem">BP 50G · 1 – 128 VU</span></h2>
+  <h2>Virtual Users Sweep  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G · 1 – 128 VU</span></h2>
 
   <p>
     Concurrency was swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
@@ -1056,7 +1102,7 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── SECTION 4: NOTPM STABILITY ── -->
 <section>
-  <h2>NOTPM Stability  <span style="font-weight:400;color:#555;font-size:0.85rem">BP 80G · 64 VU · full run</span></h2>
+  <h2>NOTPM Stability  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 80G · 64 VU · full run</span></h2>
 
   <p>
     The time-series below shows per-second NOTPM for the best BP 80G run from each engine.
@@ -1076,7 +1122,7 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── SECTION 5: JITTER ── -->
 <section>
-  <h2>NOTPM Jitter  <span style="font-weight:400;color:#555;font-size:0.85rem">last 30 min · box = P25&#8209;P75 · whiskers = P5&#8209;P95 · no outliers</span></h2>
+  <h2>NOTPM Jitter  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">last 30 min · box = P25&#8209;P75 · whiskers = P5&#8209;P95 · no outliers</span></h2>
 
   <p>
     Peak throughput tells only half the story. A database that delivers high average NOTPM but
@@ -1113,7 +1159,7 @@ HTML = f"""<!DOCTYPE html>
     Both engines used the same base <code>my.cnf</code>, captured from each run's
     <code>mariadb.cnf</code> artifact. The only parameter that varies across runs is
     <code>innodb_buffer_pool_size</code> (set per sweep step).
-    <span style="color:#f4a018;font-weight:600;">MariaDB-only</span> parameters are
+    <span style="color:#f97316;font-weight:600;">MariaDB-only</span> parameters are
     highlighted — MySQL silently ignores them.
     Parameters that differ between the two are marked
     <span style="color:#a78bfa;font-weight:600;">purple</span>.
@@ -1123,8 +1169,8 @@ HTML = f"""<!DOCTYPE html>
     <thead>
       <tr>
         <th>Parameter</th>
-        <th style="color:#f4a018;">MariaDB 12.2.2</th>
-        <th style="color:#00758f;">MySQL 8.4.8</th>
+        <th style="color:#f97316;">MariaDB 12.2.2</th>
+        <th style="color:#06b6d4;">MySQL 8.4.8</th>
       </tr>
     </thead>
     <tbody>
