@@ -1,8 +1,8 @@
-import os as _os
 """
 Build static HTML report comparing MariaDB vs MySQL
 from BP sweep and VU sweep benchmark runs.
 """
+import os as _os
 import json, base64, io, re, subprocess
 from datetime import datetime
 from collections import defaultdict, OrderedDict
@@ -170,16 +170,6 @@ mysql_vu_x,  mysql_vu_y  = vu_series("MySQL")
 #  DATASET 3 — TPS timeseries for representative runs
 #  Pick: BP 50G, 64 VU run from VU sweep for each DB
 # ══════════════════════════════════════════════════════════════════════════════
-def best_run(db, label_fragment):
-    cands = [
-        r for r in runs
-        if r["db"] == db and label_fragment.lower() in r["label"].lower()
-        and r["tps"].get("avg", 0) > 0
-    ]
-    if not cands:
-        return None
-    return max(cands, key=lambda r: r["tps"]["avg"])
-
 def best_vu_run(db, vu):
     cands = [
         r for r in vu_runs
@@ -285,7 +275,7 @@ def make_vu_chart():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  FIGURE 3 — TPS time-series (BP 80G sweep run)
+#  FIGURE 3 — TPS time-series (BP 50G, 64 VU)
 # ══════════════════════════════════════════════════════════════════════════════
 def make_timeseries_chart():
     fig, ax = plt.subplots(figsize=(12, 5.0))
@@ -419,7 +409,6 @@ for v in all_vus:
 #  CONFIG EXTRACTION
 #  Read mariadb.cnf from one representative run per DB (80G sweep)
 # ══════════════════════════════════════════════════════════════════════════════
-import os as _os
 REPO = _os.path.dirname(_os.path.abspath(__file__))
 
 # MariaDB-specific parameters that MySQL ignores
@@ -1189,7 +1178,7 @@ HTML = f"""<!DOCTYPE html>
   </table>
 </section>
 
-<!-- ── SECTION 6: METHODOLOGY ── -->
+<!-- ── SECTION 7: METHODOLOGY ── -->
 <section>
   <h2>Methodology</h2>
   <p><strong>Benchmark:</strong> TPROC-C via HammerDB 4.12 (<code>tpcc_run.tcl</code>).</p>
@@ -1330,15 +1319,6 @@ Per-second NOTPM for the BP 50G, 64 VU run from each engine (thick line = 60-sam
 
 ---
 
-## Database Configuration
-
-Both engines used the same base `my.cnf` -- only `innodb_buffer_pool_size` varies per sweep step.
-Parameters marked *MariaDB only* are silently ignored by MySQL.
-
-{md_cfg_table()}
-
----
-
 ## NOTPM Jitter — last 30 min of each run
 
 Peak throughput tells only half the story. A database that delivers high average NOTPM but with
@@ -1366,6 +1346,13 @@ runs with different mean throughputs.
 {_md_jitter_table(vu_jitter_rows)}
 
 ---
+
+## Database Configuration
+
+Both engines used the same base `my.cnf` -- only `innodb_buffer_pool_size` varies per sweep step.
+Parameters marked *MariaDB only* are silently ignored by MySQL.
+
+{md_cfg_table()}
 
 ---
 

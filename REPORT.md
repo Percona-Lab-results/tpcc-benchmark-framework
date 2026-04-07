@@ -85,6 +85,68 @@ Per-second NOTPM for the BP 50G, 64 VU run from each engine (thick line = 60-sam
 
 ---
 
+## NOTPM Jitter — last 30 min of each run
+
+Peak throughput tells only half the story. A database that delivers high average NOTPM but with
+frequent dips forces the application tier to absorb spikes through connection pooling, retry logic,
+or queuing — adding latency and complexity. In production OLTP systems, low jitter is often more
+operationally valuable than a marginally higher mean: it means predictable response times, simpler
+capacity planning, and fewer tail-latency violations under peak load.
+
+Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
+Box = P25–P75, centre = median, whiskers = P5–P95.
+The tables include **CV%** (Coefficient of Variation = std / mean × 100): a scale-free measure of
+relative variability. Lower is more stable; unlike raw std dev it is directly comparable across
+runs with different mean throughputs.
+
+### Buffer Pool Sweep
+
+![NOTPM Jitter — BP Sweep](report_assets/fig6_jitter_bp.png)
+
+| Config | DB | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
+|--------|----|-----------|---------|-----|-----|-----|-------------|
+| 10G | MariaDB | 126,418 | 12,613 | 10.0% | 109,640 | 141,021 | 31,380 |
+| 10G | MySQL | 139,246 | 48,991 | 35.2% | 87,763 | 159,381 | 71,617 |
+| 20G | MariaDB | 182,344 | 21,580 | 11.8% | 144,327 | 211,933 | 67,606 |
+| 20G | MySQL | 207,830 | 15,120 | 7.3% | 179,766 | 222,866 | 43,100 |
+| 30G | MariaDB | 214,611 | 31,668 | 14.8% | 162,673 | 260,685 | 98,011 |
+| 30G | MySQL | 233,896 | 19,083 | 8.2% | 200,901 | 257,158 | 56,257 |
+| 40G | MariaDB | 238,767 | 51,530 | 21.6% | 155,574 | 332,861 | 177,287 |
+| 40G | MySQL | 269,180 | 24,249 | 9.0% | 228,329 | 302,670 | 74,340 |
+| 50G | MariaDB | 262,605 | 67,457 | 25.7% | 157,164 | 367,607 | 210,443 |
+| 50G | MySQL | 321,783 | 25,879 | 8.0% | 281,445 | 360,799 | 79,354 |
+| 60G | MariaDB | 345,814 | 65,728 | 19.0% | 240,028 | 445,857 | 205,829 |
+| 60G | MySQL | 399,532 | 25,176 | 6.3% | 357,574 | 426,392 | 68,817 |
+| 70G | MariaDB | 485,469 | 22,789 | 4.7% | 454,104 | 510,965 | 56,860 |
+| 70G | MySQL | 431,779 | 25,911 | 6.0% | 387,887 | 458,298 | 70,410 |
+| 80G | MariaDB | 500,087 | 22,272 | 4.5% | 472,162 | 521,336 | 49,173 |
+| 80G | MySQL | 434,553 | 30,190 | 6.9% | 384,766 | 466,765 | 81,999 |
+
+### Virtual Users Sweep
+
+![NOTPM Jitter — VU Sweep](report_assets/fig7_jitter_vu.png)
+
+| Config | DB | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
+|--------|----|-----------|---------|-----|-----|-----|-------------|
+| 1 | MariaDB | 13,549 | 508 | 3.8% | 12,798 | 14,310 | 1,512 |
+| 1 | MySQL | 11,817 | 553 | 4.7% | 10,825 | 12,663 | 1,837 |
+| 2 | MariaDB | 27,149 | 997 | 3.7% | 25,401 | 28,539 | 3,137 |
+| 2 | MySQL | 23,417 | 784 | 3.3% | 22,135 | 24,705 | 2,569 |
+| 4 | MariaDB | 51,657 | 2,456 | 4.8% | 47,857 | 54,553 | 6,696 |
+| 4 | MySQL | 46,023 | 1,923 | 4.2% | 43,632 | 48,087 | 4,455 |
+| 8 | MariaDB | 94,080 | 6,507 | 6.9% | 83,299 | 102,136 | 18,837 |
+| 8 | MySQL | 83,606 | 3,560 | 4.3% | 78,138 | 87,847 | 9,709 |
+| 16 | MariaDB | 146,342 | 16,936 | 11.6% | 117,725 | 174,015 | 56,289 |
+| 16 | MySQL | 144,436 | 5,888 | 4.1% | 136,127 | 151,233 | 15,106 |
+| 32 | MariaDB | 199,770 | 39,060 | 19.6% | 136,128 | 272,926 | 136,798 |
+| 32 | MySQL | 216,844 | 14,497 | 6.7% | 194,022 | 234,320 | 40,298 |
+| 64 | MariaDB | 247,214 | 59,515 | 24.1% | 150,984 | 340,362 | 189,378 |
+| 64 | MySQL | 304,212 | 25,606 | 8.4% | 263,317 | 339,484 | 76,167 |
+| 128 | MariaDB | 247,648 | 64,013 | 25.8% | 148,500 | 365,018 | 216,518 |
+| 128 | MySQL | 337,400 | 31,942 | 9.5% | 287,348 | 392,310 | 104,961 |
+
+---
+
 ## Database Configuration
 
 Both engines used the same base `my.cnf` -- only `innodb_buffer_pool_size` varies per sweep step.
@@ -166,70 +228,6 @@ Parameters marked *MariaDB only* are silently ignored by MySQL.
 | `myisam_sort_buffer_size` | `128M` | `128M` |  |
 | `slow_query_log` | `ON` | `ON` |  |
 | `slow_query_log_file` | `/var/lib/mysql/slow.log` | `/var/lib/mysql/slow.log` |  |
-
----
-
-## NOTPM Jitter — last 30 min of each run
-
-Peak throughput tells only half the story. A database that delivers high average NOTPM but with
-frequent dips forces the application tier to absorb spikes through connection pooling, retry logic,
-or queuing — adding latency and complexity. In production OLTP systems, low jitter is often more
-operationally valuable than a marginally higher mean: it means predictable response times, simpler
-capacity planning, and fewer tail-latency violations under peak load.
-
-Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
-Box = P25–P75, centre = median, whiskers = P5–P95.
-The tables include **CV%** (Coefficient of Variation = std / mean × 100): a scale-free measure of
-relative variability. Lower is more stable; unlike raw std dev it is directly comparable across
-runs with different mean throughputs.
-
-### Buffer Pool Sweep
-
-![NOTPM Jitter — BP Sweep](report_assets/fig6_jitter_bp.png)
-
-| Config | DB | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
-|--------|----|-----------|---------|-----|-----|-----|-------------|
-| 10G | MariaDB | 126,418 | 12,613 | 10.0% | 109,640 | 141,021 | 31,380 |
-| 10G | MySQL | 139,246 | 48,991 | 35.2% | 87,763 | 159,381 | 71,617 |
-| 20G | MariaDB | 182,344 | 21,580 | 11.8% | 144,327 | 211,933 | 67,606 |
-| 20G | MySQL | 207,830 | 15,120 | 7.3% | 179,766 | 222,866 | 43,100 |
-| 30G | MariaDB | 214,611 | 31,668 | 14.8% | 162,673 | 260,685 | 98,011 |
-| 30G | MySQL | 233,896 | 19,083 | 8.2% | 200,901 | 257,158 | 56,257 |
-| 40G | MariaDB | 238,767 | 51,530 | 21.6% | 155,574 | 332,861 | 177,287 |
-| 40G | MySQL | 269,180 | 24,249 | 9.0% | 228,329 | 302,670 | 74,340 |
-| 50G | MariaDB | 262,605 | 67,457 | 25.7% | 157,164 | 367,607 | 210,443 |
-| 50G | MySQL | 321,783 | 25,879 | 8.0% | 281,445 | 360,799 | 79,354 |
-| 60G | MariaDB | 345,814 | 65,728 | 19.0% | 240,028 | 445,857 | 205,829 |
-| 60G | MySQL | 399,532 | 25,176 | 6.3% | 357,574 | 426,392 | 68,817 |
-| 70G | MariaDB | 485,469 | 22,789 | 4.7% | 454,104 | 510,965 | 56,860 |
-| 70G | MySQL | 431,779 | 25,911 | 6.0% | 387,887 | 458,298 | 70,410 |
-| 80G | MariaDB | 500,087 | 22,272 | 4.5% | 472,162 | 521,336 | 49,173 |
-| 80G | MySQL | 434,553 | 30,190 | 6.9% | 384,766 | 466,765 | 81,999 |
-
-### Virtual Users Sweep
-
-![NOTPM Jitter — VU Sweep](report_assets/fig7_jitter_vu.png)
-
-| Config | DB | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
-|--------|----|-----------|---------|-----|-----|-----|-------------|
-| 1 | MariaDB | 13,549 | 508 | 3.8% | 12,798 | 14,310 | 1,512 |
-| 1 | MySQL | 11,817 | 553 | 4.7% | 10,825 | 12,663 | 1,837 |
-| 2 | MariaDB | 27,149 | 997 | 3.7% | 25,401 | 28,539 | 3,137 |
-| 2 | MySQL | 23,417 | 784 | 3.3% | 22,135 | 24,705 | 2,569 |
-| 4 | MariaDB | 51,657 | 2,456 | 4.8% | 47,857 | 54,553 | 6,696 |
-| 4 | MySQL | 46,023 | 1,923 | 4.2% | 43,632 | 48,087 | 4,455 |
-| 8 | MariaDB | 94,080 | 6,507 | 6.9% | 83,299 | 102,136 | 18,837 |
-| 8 | MySQL | 83,606 | 3,560 | 4.3% | 78,138 | 87,847 | 9,709 |
-| 16 | MariaDB | 146,342 | 16,936 | 11.6% | 117,725 | 174,015 | 56,289 |
-| 16 | MySQL | 144,436 | 5,888 | 4.1% | 136,127 | 151,233 | 15,106 |
-| 32 | MariaDB | 199,770 | 39,060 | 19.6% | 136,128 | 272,926 | 136,798 |
-| 32 | MySQL | 216,844 | 14,497 | 6.7% | 194,022 | 234,320 | 40,298 |
-| 64 | MariaDB | 247,214 | 59,515 | 24.1% | 150,984 | 340,362 | 189,378 |
-| 64 | MySQL | 304,212 | 25,606 | 8.4% | 263,317 | 339,484 | 76,167 |
-| 128 | MariaDB | 247,648 | 64,013 | 25.8% | 148,500 | 365,018 | 216,518 |
-| 128 | MySQL | 337,400 | 31,942 | 9.5% | 287,348 | 392,310 | 104,961 |
-
----
 
 ---
 
