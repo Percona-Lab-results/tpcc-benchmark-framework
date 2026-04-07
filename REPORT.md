@@ -74,9 +74,9 @@ Concurrency swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
 
 ---
 
-## NOTPM Stability -- BP 80G, 64 VU
+## NOTPM Stability -- BP 50G, 64 VU
 
-Per-second NOTPM for the best BP 80G run from each engine (thick line = 60-sample rolling average).
+Per-second NOTPM for the BP 50G, 64 VU run from each engine (thick line = 60-sample rolling average).
 
 ![NOTPM Over Time](report_assets/fig3_timeseries.png)
 

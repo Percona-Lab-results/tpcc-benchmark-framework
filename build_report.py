@@ -168,7 +168,7 @@ mysql_vu_x,  mysql_vu_y  = vu_series("MySQL")
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  DATASET 3 — TPS timeseries for representative runs
-#  Pick: MariaDB BP 80G sweep  vs  MySQL BP 80G sweep
+#  Pick: BP 50G, 64 VU run from VU sweep for each DB
 # ══════════════════════════════════════════════════════════════════════════════
 def best_run(db, label_fragment):
     cands = [
@@ -180,8 +180,15 @@ def best_run(db, label_fragment):
         return None
     return max(cands, key=lambda r: r["tps"]["avg"])
 
-ts_maria = best_run("MariaDB", "BP 80G sweep")
-ts_mysql  = best_run("MySQL",   "BP 80G sweep")
+def best_vu_run(db, vu):
+    cands = [
+        r for r in vu_runs
+        if r["db"] == db and r["virtual_users"] == vu and r["tps"].get("avg", 0) > 0
+    ]
+    return max(cands, key=lambda r: r["tps"]["avg"]) if cands else None
+
+ts_maria = best_vu_run("MariaDB", 64)
+ts_mysql  = best_vu_run("MySQL",   64)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  DATASET 4 — VU scaling efficiency (TPS / TPS@1VU)
@@ -299,7 +306,7 @@ def make_timeseries_chart():
 
     ax.set_xlabel("Elapsed time (minutes)")
     ax.set_ylabel("NOTPM (thousands)")
-    ax.set_title("NOTPM Over Time — Buffer Pool 80G  [64 VU · 3600 s]")
+    ax.set_title("NOTPM Over Time — Buffer Pool 50G  [64 VU · 3600 s]")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
     ax.legend()
     ax.set_ylim(bottom=0)
@@ -1102,15 +1109,15 @@ HTML = f"""<!DOCTYPE html>
 
 <!-- ── SECTION 4: NOTPM STABILITY ── -->
 <section>
-  <h2>NOTPM Stability  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 80G · 64 VU · full run</span></h2>
+  <h2>NOTPM Stability  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G · 64 VU · full run</span></h2>
 
   <p>
-    The time-series below shows per-second NOTPM for the best BP 80G run from each engine.
+    The time-series below shows per-second NOTPM for the BP 50G, 64 VU run from each engine.
     Thin lines are raw 1-second samples; thick lines are 60-sample rolling averages.
   </p>
 
   <div class="chart"><img src="data:image/png;base64,{img_ts}" alt="NOTPM timeseries"></div>
-  <div class="chart-caption">Figure 5 — NOTPM over elapsed time. Y-axis starts at zero. Ramp-up period excluded.</div>
+  <div class="chart-caption">Figure 5 — NOTPM over elapsed time. BP 50G · 64 VU. Y-axis starts at zero. Ramp-up period excluded.</div>
 
   <div class="callout">
     MariaDB shows <strong>higher variance</strong> in raw per-second NOTPM, which is typical of its background flush
@@ -1309,9 +1316,9 @@ Concurrency swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
 
 ---
 
-## NOTPM Stability -- BP 80G, 64 VU
+## NOTPM Stability -- BP 50G, 64 VU
 
-Per-second NOTPM for the best BP 80G run from each engine (thick line = 60-sample rolling average).
+Per-second NOTPM for the BP 50G, 64 VU run from each engine (thick line = 60-sample rolling average).
 
 ![NOTPM Over Time](report_assets/fig3_timeseries.png)
 
