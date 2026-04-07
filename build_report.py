@@ -1017,12 +1017,13 @@ HTML = f"""<!DOCTYPE html>
   </div>
 
   <div class="callout">
-    <strong>Key findings:</strong> MariaDB 12.2.2 outperforms MySQL 8.4.8 at all buffer pool sizes with 64 VU,
-    delivering up to <strong>{(max(maria_bp_y)/max(mysql_bp_y)-1)*100:.0f}% more throughput</strong> at 80G BP.
-    However, MySQL scales better under high concurrency — at 128 virtual users (50G BP)
-    MySQL leads by <strong>{(mysql_vu_y[-1]/maria_vu_y[-1]-1)*100:.0f}%</strong>, suggesting
+    <strong>Key findings:</strong> MySQL 8.4.8 leads at smaller buffer pool sizes (10G–60G) with 64 VU,
+    while MariaDB 12.2.2 takes over at 70G and 80G, delivering up to
+    <strong>{(max(maria_bp_y)/max(mysql_bp_y)-1)*100:.0f}% more throughput</strong> at 80G BP —
+    where the working set fits mostly in memory and InnoDB's I/O pressure is minimal.
+    Under high concurrency (128 VU, 50G BP) MySQL leads by
+    <strong>{(mysql_vu_y[-1]/maria_vu_y[-1]-1)*100:.0f}%</strong>, suggesting
     more efficient lock/latch management at extreme thread counts.
-    Both engines plateau between 64 and 128 VU, indicating CPU or InnoDB internal bottlenecks.
   </div>
 </section>
 
@@ -1057,10 +1058,12 @@ HTML = f"""<!DOCTYPE html>
   </table>
 
   <div class="callout" style="margin-top:20px;">
-    MariaDB leads at every buffer pool size.
-    The gap is largest at <strong>70G</strong> ({pct_diff(np.mean(bp_data['MariaDB'].get(70,[0])), np.mean(bp_data['MySQL'].get(70,[0])))}) and <strong>80G</strong> ({pct_diff(np.mean(bp_data['MariaDB'].get(80,[0])), np.mean(bp_data['MySQL'].get(80,[0])))}),
-    where the working set fits mostly in memory and I/O is minimised.
-    At small pool sizes (10–30G) the gap narrows — both engines are I/O-bound and the difference is less pronounced.
+    MySQL leads at smaller buffer pool sizes (10G–60G), where the working set exceeds memory and
+    I/O throughput dominates. MariaDB overtakes at <strong>70G</strong>
+    ({pct_diff(np.mean(bp_data['MariaDB'].get(70,[0])), np.mean(bp_data['MySQL'].get(70,[0])))}) and
+    <strong>80G</strong> ({pct_diff(np.mean(bp_data['MariaDB'].get(80,[0])), np.mean(bp_data['MySQL'].get(80,[0])))}),
+    where the hot data fits mostly in memory and InnoDB's buffer pool efficiency becomes the
+    differentiating factor.
   </div>
 </section>
 
@@ -1100,10 +1103,10 @@ HTML = f"""<!DOCTYPE html>
   </table>
 
   <div class="callout" style="margin-top:20px;">
-    MariaDB leads at low-to-medium concurrency (1–32 VU) at this buffer pool size.
-    MySQL overtakes at <strong>64 VU</strong> and extends its lead at <strong>128 VU</strong> (+{(mysql_vu_y[-1]/maria_vu_y[-1]-1)*100:.0f}%).
+    MariaDB leads at low concurrency (1–16 VU) at this buffer pool size.
+    MySQL overtakes at <strong>32 VU</strong> and extends its lead at <strong>128 VU</strong> (+{(mysql_vu_y[-1]/maria_vu_y[-1]-1)*100:.0f}%).
     Both engines show diminishing returns beyond 64 VU — MariaDB essentially saturates between 64 and 128 VU,
-    while MySQL continues to extract modest additional throughput.
+    while MySQL continues to extract additional throughput.
   </div>
 </section>
 
@@ -1276,9 +1279,10 @@ def build_md():
 | MySQL advantage @ 128 VU | -- | +{adv_vu:.0f}% |
 | Scaling factor 1->128 VU (BP 50G) | {scale_m:.0f}x | {scale_q:.0f}x |
 
-> **Key findings:** MariaDB 12.2.2 outperforms MySQL 8.4.8 at all buffer pool sizes with 64 VU,
-> delivering up to **{adv_bp:.0f}% more throughput** at 80G BP.
-> MySQL overtakes at high concurrency -- at 128 VU (50G BP) it leads by **{adv_vu:.0f}%**,
+> **Key findings:** MySQL 8.4.8 leads at smaller buffer pool sizes (10G–60G) with 64 VU.
+> MariaDB 12.2.2 overtakes at 70G and 80G, delivering up to **{adv_bp:.0f}% more throughput** at 80G BP
+> where the working set fits mostly in memory.
+> MySQL also leads at high concurrency -- at 128 VU (50G BP) it leads by **{adv_vu:.0f}%**,
 > suggesting more efficient lock/latch management at extreme thread counts.
 
 ---
@@ -1294,9 +1298,8 @@ The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot d
 
 {md_bp_table()}
 
-> MariaDB leads at every buffer pool size. The gap is largest at 70G and 80G where the working
-> set fits mostly in memory. At small pool sizes (10-30G) both engines are I/O-bound and the
-> difference narrows.
+> MySQL leads at 10G–60G. MariaDB overtakes at 70G and 80G where the working set fits mostly
+> in memory. At small pool sizes both engines are I/O-bound and MySQL's advantage is largest.
 
 ---
 
@@ -1310,7 +1313,7 @@ Concurrency swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
 
 {md_vu_table()}
 
-> MariaDB leads at 1-32 VU. MySQL overtakes at 64 VU and extends its lead at 128 VU (+{adv_vu:.0f}%).
+> MariaDB leads at 1-16 VU. MySQL overtakes at 32 VU and extends its lead at 128 VU (+{adv_vu:.0f}%).
 > Both plateau between 64 and 128 VU -- MariaDB essentially saturates while MySQL extracts
 > modest additional throughput, indicating better high-concurrency InnoDB internals.
 

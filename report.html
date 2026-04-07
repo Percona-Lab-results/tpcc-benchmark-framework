@@ -250,12 +250,13 @@
   </div>
 
   <div class="callout">
-    <strong>Key findings:</strong> MariaDB 12.2.2 outperforms MySQL 8.4.8 at all buffer pool sizes with 64 VU,
-    delivering up to <strong>15% more throughput</strong> at 80G BP.
-    However, MySQL scales better under high concurrency — at 128 virtual users (50G BP)
-    MySQL leads by <strong>32%</strong>, suggesting
+    <strong>Key findings:</strong> MySQL 8.4.8 leads at smaller buffer pool sizes (10G–60G) with 64 VU,
+    while MariaDB 12.2.2 takes over at 70G and 80G, delivering up to
+    <strong>15% more throughput</strong> at 80G BP —
+    where the working set fits mostly in memory and InnoDB's I/O pressure is minimal.
+    Under high concurrency (128 VU, 50G BP) MySQL leads by
+    <strong>32%</strong>, suggesting
     more efficient lock/latch management at extreme thread counts.
-    Both engines plateau between 64 and 128 VU, indicating CPU or InnoDB internal bottlenecks.
   </div>
 </section>
 
@@ -297,10 +298,12 @@
   </table>
 
   <div class="callout" style="margin-top:20px;">
-    MariaDB leads at every buffer pool size.
-    The gap is largest at <strong>70G</strong> (+13.0%) and <strong>80G</strong> (+14.9%),
-    where the working set fits mostly in memory and I/O is minimised.
-    At small pool sizes (10–30G) the gap narrows — both engines are I/O-bound and the difference is less pronounced.
+    MySQL leads at smaller buffer pool sizes (10G–60G), where the working set exceeds memory and
+    I/O throughput dominates. MariaDB overtakes at <strong>70G</strong>
+    (+13.0%) and
+    <strong>80G</strong> (+14.9%),
+    where the hot data fits mostly in memory and InnoDB's buffer pool efficiency becomes the
+    differentiating factor.
   </div>
 </section>
 
@@ -347,10 +350,10 @@
   </table>
 
   <div class="callout" style="margin-top:20px;">
-    MariaDB leads at low-to-medium concurrency (1–32 VU) at this buffer pool size.
-    MySQL overtakes at <strong>64 VU</strong> and extends its lead at <strong>128 VU</strong> (+32%).
+    MariaDB leads at low concurrency (1–16 VU) at this buffer pool size.
+    MySQL overtakes at <strong>32 VU</strong> and extends its lead at <strong>128 VU</strong> (+32%).
     Both engines show diminishing returns beyond 64 VU — MariaDB essentially saturates between 64 and 128 VU,
-    while MySQL continues to extract modest additional throughput.
+    while MySQL continues to extract additional throughput.
   </div>
 </section>
 
@@ -556,7 +559,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-07 14:39
+  Report generated 2026-04-07 14:51
 </footer>
 
 </div>
