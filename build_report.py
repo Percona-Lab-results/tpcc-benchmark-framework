@@ -1151,8 +1151,16 @@ HTML = f"""<!DOCTYPE html>
 <section>
   <h2>NOTPM Stability  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G \u00b7 64 VU \u00b7 full run</span></h2>
   <p>
-    Per-second NOTPM for the BP 50G, 64 VU run from each engine.
-    Thin lines are raw 1-second samples; thick lines are 60-sample rolling averages.
+    <strong>NOTPM Stability</strong> measures how consistently a database sustains its throughput
+    over the entire duration of a benchmark run. A high average NOTPM is meaningless if the engine
+    periodically stalls \u2014 background checkpoint flushes, purge operations, or adaptive flushing
+    can cause sharp dips that ripple through the application as latency spikes.
+  </p>
+  <p>
+    The chart below plots per-second NOTPM for the full 3600-second run (ramp-up excluded) at
+    BP 50G with 64 virtual users. Thin lines are raw 1-second samples; thick lines are 60-second
+    rolling averages. A flat rolling average indicates stable throughput; wide oscillations suggest
+    periodic internal bottlenecks (e.g. InnoDB log checkpointing, buffer pool flushing, or purge lag).
   </p>
   <div class="chart"><img src="data:image/png;base64,{img_ts}" alt="NOTPM timeseries"></div>
   <div class="chart-caption">Figure 5 \u2014 NOTPM over elapsed time. BP 50G \u00b7 64 VU. Y-axis starts at zero. Ramp-up excluded.</div>
@@ -1161,8 +1169,24 @@ HTML = f"""<!DOCTYPE html>
 <section>
   <h2>NOTPM Jitter  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">last 30 min \u00b7 box = P25\u2011P75 \u00b7 whiskers = P5\u2011P95</span></h2>
   <p>
-    Each box shows the distribution of per-second NOTPM samples during the final 30 minutes of a run.
-    <strong>CV%</strong> (Coefficient of Variation = std / mean \u00d7 100): lower is more stable.
+    <strong>NOTPM Jitter</strong> quantifies the <em>spread</em> of second-to-second throughput variation,
+    focusing on the final 30 minutes of each run when the system has fully warmed up and reached
+    steady state. While the Stability chart above shows the full time-series shape, jitter distills
+    it into a single statistical picture: how tightly packed are the per-second NOTPM readings
+    around the mean?
+  </p>
+  <p>
+    A database with low jitter delivers predictable response times, simplifies capacity planning,
+    and avoids tail-latency violations under peak load. High jitter forces the application tier
+    to absorb throughput dips through connection pooling, retry logic, or queuing \u2014 adding
+    complexity and latency even when the average throughput looks good.
+  </p>
+  <p>
+    Each box below shows the P25\u2013P75 range (interquartile), the centre line is the median,
+    and whiskers extend to P5\u2013P95. The tables include <strong>CV%</strong> (Coefficient of
+    Variation = std\u2009/\u2009mean\u2009\u00d7\u2009100): a scale-free measure where lower is
+    more stable. Unlike raw standard deviation, CV% is directly comparable across runs with
+    different mean throughputs.
   </p>
 
   <h3>Buffer Pool Sweep</h3>
@@ -1313,11 +1337,36 @@ def build_md():
 
 ## NOTPM Stability -- BP 50G, 64 VU
 
+**NOTPM Stability** measures how consistently a database sustains its throughput over the entire
+duration of a benchmark run. A high average NOTPM is meaningless if the engine periodically
+stalls -- background checkpoint flushes, purge operations, or adaptive flushing can cause sharp
+dips that ripple through the application as latency spikes.
+
+The chart plots per-second NOTPM for the full 3600-second run (ramp-up excluded) at BP 50G
+with 64 virtual users. Thin lines are raw 1-second samples; thick lines are 60-second rolling
+averages. A flat rolling average indicates stable throughput; wide oscillations suggest periodic
+internal bottlenecks (e.g. InnoDB log checkpointing, buffer pool flushing, or purge lag).
+
 ![NOTPM Over Time](report_assets/fig3_timeseries.png)
 
 ---
 
 ## NOTPM Jitter -- last 30 min of each run
+
+**NOTPM Jitter** quantifies the *spread* of second-to-second throughput variation, focusing on
+the final 30 minutes of each run when the system has fully warmed up and reached steady state.
+While the Stability chart above shows the full time-series shape, jitter distills it into a
+single statistical picture: how tightly packed are the per-second NOTPM readings around the mean?
+
+A database with low jitter delivers predictable response times, simplifies capacity planning,
+and avoids tail-latency violations under peak load. High jitter forces the application tier to
+absorb throughput dips through connection pooling, retry logic, or queuing -- adding complexity
+and latency even when the average throughput looks good.
+
+Each box shows the P25-P75 range (interquartile), the centre line is the median, and whiskers
+extend to P5-P95. The tables include **CV%** (Coefficient of Variation = std / mean x 100):
+a scale-free measure where lower is more stable. Unlike raw standard deviation, CV% is directly
+comparable across runs with different mean throughputs.
 
 ### Buffer Pool Sweep
 
