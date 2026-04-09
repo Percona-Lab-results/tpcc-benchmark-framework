@@ -481,6 +481,11 @@ main() {
     capture_config
     write_tcl_script
 
+    # Drop OS caches for consistent cold-start
+    log "Dropping OS page cache..."
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+
     # Ensure collectors stop on exit
     trap stop_collectors EXIT
 

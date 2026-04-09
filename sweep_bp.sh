@@ -72,7 +72,12 @@ case "$DB" in
         START="${SCRIPT_DIR}/start_mysql97.sh"
         CONTAINER="mysql97"
         ;;
-    *) die "Unknown DB: ${DB}. Use mariadb, mysql, percona, or mysql97." ;;
+    mariadb123)
+        CNF="${SCRIPT_DIR}/mariadb.cnf"
+        START="${SCRIPT_DIR}/start_mariadb123.sh"
+        CONTAINER="mariadb123"
+        ;;
+    *) die "Unknown DB: ${DB}. Use mariadb, mysql, percona, mysql97, or mariadb123." ;;
 esac
 
 [[ -f "$CNF" ]] || die "Config not found: ${CNF}"

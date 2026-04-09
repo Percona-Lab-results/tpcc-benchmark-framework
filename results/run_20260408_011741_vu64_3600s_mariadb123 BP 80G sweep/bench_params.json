@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-04-08T01:17:41+00:00",
+  "hammerdb_version": "4.12",
+  "mariadb_host": "127.0.0.1",
+  "mariadb_port": "3306",
+  "database": "tpcc",
+  "warehouses": 1000,
+  "virtual_users": 64,
+  "rampup_seconds": 60,
+  "duration_seconds": 3600,
+  "rampup_minutes": 1,
+  "duration_minutes": 60,
+  "label": "mariadb123 BP 80G sweep"
+}
