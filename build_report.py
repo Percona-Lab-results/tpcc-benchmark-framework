@@ -1127,6 +1127,21 @@ HTML = f"""<!DOCTYPE html>
 <section>
   <h2>Virtual Users Sweep  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G \u00b7 1 \u2013 128 VU</span></h2>
   <p>
+    A <strong>Virtual User (VU)</strong> is a HammerDB worker thread that simulates an independent
+    database client. Each VU opens its own connection, picks a random warehouse, and continuously
+    executes the TPROC-C transaction mix (new-order, payment, delivery, order-status, stock-level)
+    in a tight loop for the duration of the run. Increasing the VU count is equivalent to increasing
+    the number of concurrent application threads hitting the database simultaneously.
+  </p>
+  <p>
+    VU count directly stresses the database engine\u2019s concurrency internals: InnoDB row-level
+    locking, the lock manager, undo/purge scheduling, buffer pool latch contention, and redo log
+    synchronisation. At low VU counts the engine is mostly CPU- and I/O-bound; as VU rises,
+    internal latch contention and lock waits become the dominant bottleneck. The point where
+    throughput plateaus reveals how efficiently the engine scales under parallel workloads \u2014
+    a critical metric for multi-tenant and connection-pool-heavy OLTP deployments.
+  </p>
+  <p>
     Concurrency was swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
     Each VU count ran for 3600 seconds with a 60-second ramp-up.
   </p>
@@ -1326,6 +1341,22 @@ def build_md():
 ---
 
 ## Virtual Users Sweep -- BP 50G, 1-128 VU
+
+A **Virtual User (VU)** is a HammerDB worker thread that simulates an independent database
+client. Each VU opens its own connection, picks a random warehouse, and continuously executes
+the TPROC-C transaction mix (new-order, payment, delivery, order-status, stock-level) in a
+tight loop for the duration of the run. Increasing the VU count is equivalent to increasing
+the number of concurrent application threads hitting the database simultaneously.
+
+VU count directly stresses the database engine's concurrency internals: InnoDB row-level
+locking, the lock manager, undo/purge scheduling, buffer pool latch contention, and redo log
+synchronisation. At low VU counts the engine is mostly CPU- and I/O-bound; as VU rises,
+internal latch contention and lock waits become the dominant bottleneck. The point where
+throughput plateaus reveals how efficiently the engine scales under parallel workloads -- a
+critical metric for multi-tenant and connection-pool-heavy OLTP deployments.
+
+Concurrency was swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool. Each VU
+count ran for 3600 seconds with a 60-second ramp-up.
 
 ![TPROC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
 

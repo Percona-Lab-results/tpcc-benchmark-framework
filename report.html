@@ -272,6 +272,21 @@
 <section>
   <h2>Virtual Users Sweep  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G · 1 – 128 VU</span></h2>
   <p>
+    A <strong>Virtual User (VU)</strong> is a HammerDB worker thread that simulates an independent
+    database client. Each VU opens its own connection, picks a random warehouse, and continuously
+    executes the TPROC-C transaction mix (new-order, payment, delivery, order-status, stock-level)
+    in a tight loop for the duration of the run. Increasing the VU count is equivalent to increasing
+    the number of concurrent application threads hitting the database simultaneously.
+  </p>
+  <p>
+    VU count directly stresses the database engine’s concurrency internals: InnoDB row-level
+    locking, the lock manager, undo/purge scheduling, buffer pool latch contention, and redo log
+    synchronisation. At low VU counts the engine is mostly CPU- and I/O-bound; as VU rises,
+    internal latch contention and lock waits become the dominant bottleneck. The point where
+    throughput plateaus reveals how efficiently the engine scales under parallel workloads —
+    a critical metric for multi-tenant and connection-pool-heavy OLTP deployments.
+  </p>
+  <p>
     Concurrency was swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool.
     Each VU count ran for 3600 seconds with a 60-second ramp-up.
   </p>
@@ -521,7 +536,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-09 08:57
+  Report generated 2026-04-09 09:01
 </footer>
 
 </div>
