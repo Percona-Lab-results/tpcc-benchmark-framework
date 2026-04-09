@@ -1109,8 +1109,25 @@ HTML = f"""<!DOCTYPE html>
 <section>
   <h2>Buffer Pool Sweep  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">64 VU \u00b7 10G \u2013 80G</span></h2>
   <p>
-    All four engines ran TPROC-C with 64 virtual users and a fixed buffer pool varying from 10 GiB to 80 GiB.
-    The dataset represents 1000 warehouses (~100 GB working set), so an 80 GiB pool covers ~80% of hot data.
+    The <strong>InnoDB Buffer Pool</strong> is the main memory area where InnoDB caches table data
+    and index pages. Every read that hits the buffer pool avoids a disk I/O; every miss forces a
+    physical read from storage. For write-heavy OLTP workloads like TPROC-C, the buffer pool also
+    holds dirty pages waiting to be flushed \u2014 a larger pool means fewer flush cycles and less
+    I/O contention between foreground transactions and background flushing.
+  </p>
+  <p>
+    A <strong>buffer pool sweep</strong> varies this single parameter (from 10 GiB to 80 GiB in
+    10 GiB steps) while holding everything else constant \u2014 64 virtual users, 1000 warehouses
+    (~100 GB working set), same hardware, same configuration. This isolates the effect of memory
+    pressure on throughput. At small pool sizes (10\u201330G) only a fraction of the hot data fits
+    in RAM, so performance is dominated by disk I/O speed and the engine\u2019s read-ahead and
+    flushing strategies. As the pool grows toward the working set size, more reads hit cache and
+    fewer dirty-page evictions are needed, revealing the engine\u2019s in-memory efficiency.
+  </p>
+  <p>
+    The 64 VU count was chosen to represent a moderate-to-high concurrency level typical of
+    production OLTP servers, ensuring that throughput differences reflect buffer pool efficiency
+    rather than single-thread performance.
   </p>
   <div class="chart"><img src="data:image/png;base64,{img_bp_line}" alt="BP sweep line chart"></div>
   <div class="chart-caption">Figure 1 \u2014 Average NOTPM vs buffer pool size. Each point is the steady-state average (post-ramp-up).</div>
@@ -1331,6 +1348,24 @@ def build_md():
 ---
 
 ## Buffer Pool Sweep -- 64 VU, 10G-80G
+
+The **InnoDB Buffer Pool** is the main memory area where InnoDB caches table data and index
+pages. Every read that hits the buffer pool avoids a disk I/O; every miss forces a physical
+read from storage. For write-heavy OLTP workloads like TPROC-C, the buffer pool also holds
+dirty pages waiting to be flushed -- a larger pool means fewer flush cycles and less I/O
+contention between foreground transactions and background flushing.
+
+A **buffer pool sweep** varies this single parameter (from 10 GiB to 80 GiB in 10 GiB steps)
+while holding everything else constant -- 64 virtual users, 1000 warehouses (~100 GB working
+set), same hardware, same configuration. This isolates the effect of memory pressure on
+throughput. At small pool sizes (10-30G) only a fraction of the hot data fits in RAM, so
+performance is dominated by disk I/O speed and the engine's read-ahead and flushing strategies.
+As the pool grows toward the working set size, more reads hit cache and fewer dirty-page
+evictions are needed, revealing the engine's in-memory efficiency.
+
+The 64 VU count was chosen to represent a moderate-to-high concurrency level typical of
+production OLTP servers, ensuring that throughput differences reflect buffer pool efficiency
+rather than single-thread performance.
 
 ![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
