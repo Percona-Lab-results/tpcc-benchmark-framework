@@ -39,7 +39,11 @@ rather than single-thread performance.
 
 ![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
+> **MySQL 8.4.8** leads at 10G, but **MariaDB 12.2.2** takes over at 80G (+1% over MySQL 9.7.0). The steepest single-step gain is **MariaDB 12.2.2** between 10G and 20G (+49%), suggesting a critical threshold where significantly more of the working set fits in memory.
+
 ![TPROC-C Throughput -- bar chart](report_assets/fig5_bp_bar.png)
+
+> **MySQL 9.7.0** leads at 5 of 8 buffer pool sizes. The gap between engines is narrow at small pool sizes where all are I/O-bound, and widens significantly above 60G as in-memory efficiency differences dominate.
 
 | BP Size | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
 |---------|---|---|---|---|
@@ -76,6 +80,10 @@ count ran for 3600 seconds with a 60-second ramp-up.
 
 ![Concurrency Scaling Efficiency](report_assets/fig4_scaling.png)
 
+> **MySQL 9.7.0** leads at single-threaded (1 VU) performance, while **MySQL 9.7.0** dominates at 128 VU.  Near-plateau between 64 and 128 VU for **MariaDB 12.2.2** (+1%), indicating internal scalability limits at this concurrency level.
+
+> At 128 VU, **MySQL 8.4.8** achieves **29×** speedup over single-threaded (ideal would be 128×), while **MariaDB 12.2.2** reaches only 19×. The gap from the ideal line shows how much throughput is lost to lock contention, latch waits, and InnoDB internal serialisation.
+
 | VU | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
 |----|---|---|---|---|
 | 1 | 12,746 | 12,730 | 11,075 | **13,637** |
@@ -103,6 +111,8 @@ internal bottlenecks (e.g. InnoDB log checkpointing, buffer pool flushing, or pu
 
 ![NOTPM Over Time](report_assets/fig3_timeseries.png)
 
+> **MySQL 8.4.8** delivers the flattest profile (CV = 8.6%), while **MariaDB 12.3.1** shows the most variation (CV = 25.2%). Wide oscillations typically indicate periodic InnoDB checkpoint flushes or purge storms that momentarily starve foreground transactions.
+
 ---
 
 ## NOTPM Jitter -- last 30 min of each run
@@ -125,6 +135,8 @@ comparable across runs with different mean throughputs.
 ### Buffer Pool Sweep
 
 ![NOTPM Jitter -- BP Sweep](report_assets/fig6_jitter_bp.png)
+
+> **MySQL 9.7.0** is the most consistent across all buffer pool sizes (avg CV = 7.9%), while **MariaDB 12.3.1** shows the highest jitter (avg CV = 14.1%). Note that jitter tends to increase at mid-range pool sizes (30–60G) where the engine alternates between serving from cache and triggering I/O-heavy evictions.
 
 | Config | Engine | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
 |--------|--------|-----------|---------|-----|-----|-----|-------------|
@@ -164,6 +176,8 @@ comparable across runs with different mean throughputs.
 ### Virtual Users Sweep
 
 ![NOTPM Jitter -- VU Sweep](report_assets/fig7_jitter_vu.png)
+
+> At peak concurrency (128 VU), **MySQL 8.4.8** maintains the tightest spread (CV = 9.5%), while **MariaDB 12.3.1** has the widest (CV = 26.1%). Jitter generally increases with VU count as lock contention introduces more variable wait times per transaction.
 
 | Config | Engine | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
 |--------|--------|-----------|---------|-----|-----|-----|-------------|

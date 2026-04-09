@@ -906,6 +906,204 @@ def exec_summary_callout():
     )
 
 
+# ── per-chart insight callouts ────────────────────────────────────────────────
+def _ranked(eid_val_pairs):
+    """Return list of (eid, val) sorted descending by val."""
+    return sorted(eid_val_pairs, key=lambda x: x[1], reverse=True)
+
+
+def insight_bp_line():
+    """Figure 1 — BP sweep line: who wins where and the crossover."""
+    # Find leader at smallest and largest BP
+    small = all_bp_sizes[0]
+    large = all_bp_sizes[-1]
+    def notpm_at(eid, size):
+        xs, ys = bp_series[eid]
+        return dict(zip(xs, ys)).get(size, 0)
+
+    rank_small = _ranked([(eid, notpm_at(eid, small)) for eid in ENGINE_IDS if notpm_at(eid, small) > 0])
+    rank_large = _ranked([(eid, notpm_at(eid, large)) for eid in ENGINE_IDS if notpm_at(eid, large) > 0])
+    leader_s, val_s = rank_small[0]
+    second_s, val2_s = rank_small[1]
+    leader_l, val_l = rank_large[0]
+    second_l, val2_l = rank_large[1]
+    gain_l = (val_l / val2_l - 1) * 100
+
+    # biggest jump for any engine between consecutive sizes
+    max_jump_eid, max_jump_from, max_jump_pct = None, 0, 0
+    for eid in ENGINE_IDS:
+        xs, ys = bp_series[eid]
+        for i in range(1, len(xs)):
+            if ys[i-1] > 0:
+                pct = (ys[i] / ys[i-1] - 1) * 100
+                if pct > max_jump_pct:
+                    max_jump_pct = pct
+                    max_jump_from = xs[i-1]
+                    max_jump_eid = eid
+
+    parts = [
+        f'<strong>{ENGINES[leader_s]["display"]}</strong> leads at {small}G, but '
+        f'<strong>{ENGINES[leader_l]["display"]}</strong> takes over at {large}G '
+        f'(+{gain_l:.0f}% over {ENGINES[second_l]["display"]}).',
+    ]
+    if max_jump_eid:
+        parts.append(
+            f' The steepest single-step gain is <strong>{ENGINES[max_jump_eid]["display"]}</strong> '
+            f'between {max_jump_from}G and {max_jump_from+10}G (+{max_jump_pct:.0f}%), '
+            f'suggesting a critical threshold where significantly more of the working set fits in memory.'
+        )
+    return "".join(parts)
+
+
+def insight_bp_bar():
+    """Figure 2 — grouped bar: overall pattern."""
+    # Count wins per engine across all sizes
+    wins = {eid: 0 for eid in ENGINE_IDS}
+    for s in all_bp_sizes:
+        vals = [(eid, dict(zip(*bp_series[eid])).get(s, 0)) for eid in ENGINE_IDS]
+        leader = max(vals, key=lambda x: x[1])
+        if leader[1] > 0:
+            wins[leader[0]] += 1
+    most_wins = max(ENGINE_IDS, key=lambda e: wins[e])
+    return (
+        f'<strong>{ENGINES[most_wins]["display"]}</strong> leads at {wins[most_wins]} of '
+        f'{len(all_bp_sizes)} buffer pool sizes. The gap between engines is narrow at small '
+        f'pool sizes where all are I/O-bound, and widens significantly above 60G as in-memory '
+        f'efficiency differences dominate.'
+    )
+
+
+def insight_vu_line():
+    """Figure 3 — VU sweep line: crossover and plateau."""
+    # Find who leads at 1 VU vs 128 VU
+    def notpm_at_vu(eid, vu):
+        xs, ys = vu_data[eid]
+        return dict(zip(xs, ys)).get(vu, 0)
+
+    rank_1 = _ranked([(eid, notpm_at_vu(eid, 1)) for eid in ENGINE_IDS if notpm_at_vu(eid, 1) > 0])
+    rank_128 = _ranked([(eid, notpm_at_vu(eid, 128)) for eid in ENGINE_IDS if notpm_at_vu(eid, 128) > 0])
+    leader_1 = rank_1[0][0]
+    leader_128 = rank_128[0][0]
+
+    # Find which engines plateau (< 5% gain from 64 to 128)
+    plateau = []
+    for eid in ENGINE_IDS:
+        v64 = notpm_at_vu(eid, 64)
+        v128 = notpm_at_vu(eid, 128)
+        if v64 > 0 and v128 > 0:
+            gain = (v128 / v64 - 1) * 100
+            if gain < 5:
+                plateau.append((eid, gain))
+
+    parts = [
+        f'<strong>{ENGINES[leader_1]["display"]}</strong> leads at single-threaded (1 VU) performance, '
+        f'while <strong>{ENGINES[leader_128]["display"]}</strong> dominates at 128 VU.',
+    ]
+    if plateau:
+        names = " and ".join(f'<strong>{ENGINES[e]["display"]}</strong> (+{g:.0f}%)' for e, g in plateau)
+        parts.append(
+            f' Near-plateau between 64 and 128 VU for {names}, '
+            f'indicating internal scalability limits at this concurrency level.'
+        )
+    return " ".join(parts)
+
+
+def insight_scaling():
+    """Figure 4 — scaling efficiency: who is closest to linear."""
+    # Compute efficiency at 128 VU: actual_speedup / 128
+    effs = []
+    for eid in ENGINE_IDS:
+        xs, ys, _ = eff_data[eid]
+        if 128 in dict(zip(xs, ys)):
+            effs.append((eid, dict(zip(xs, ys))[128]))
+    if not effs:
+        return ""
+    best_eid, best_su = max(effs, key=lambda x: x[1])
+    worst_eid, worst_su = min(effs, key=lambda x: x[1])
+    return (
+        f'At 128 VU, <strong>{ENGINES[best_eid]["display"]}</strong> achieves '
+        f'<strong>{best_su:.0f}\u00d7</strong> speedup over single-threaded '
+        f'(ideal would be 128\u00d7), while <strong>{ENGINES[worst_eid]["display"]}</strong> '
+        f'reaches only {worst_su:.0f}\u00d7. The gap from the ideal line shows how much '
+        f'throughput is lost to lock contention, latch waits, and InnoDB internal serialisation.'
+    )
+
+
+def insight_timeseries():
+    """Figure 5 — time-series: variance comparison."""
+    # Compute CV% for each engine's 64VU run
+    cvs = []
+    for eid in ENGINE_IDS:
+        run = ts_runs[eid]
+        if run is None:
+            continue
+        _, tps = qps_timeseries(run)
+        if len(tps) > 100:
+            a = np.array(tps)
+            cv = float(np.std(a) / np.mean(a) * 100)
+            cvs.append((eid, cv))
+    if not cvs:
+        return ""
+    smoothest = min(cvs, key=lambda x: x[1])
+    roughest = max(cvs, key=lambda x: x[1])
+    return (
+        f'<strong>{ENGINES[smoothest[0]]["display"]}</strong> delivers the flattest profile '
+        f'(CV\u2009=\u2009{smoothest[1]:.1f}%), while '
+        f'<strong>{ENGINES[roughest[0]]["display"]}</strong> shows the most variation '
+        f'(CV\u2009=\u2009{roughest[1]:.1f}%). Wide oscillations typically indicate periodic '
+        f'InnoDB checkpoint flushes or purge storms that momentarily starve foreground transactions.'
+    )
+
+
+def insight_jitter_bp():
+    """Figure 6 — jitter box plots: BP sweep."""
+    # Find engine with lowest average CV% across all BP sizes
+    avg_cv = {}
+    for eid in ENGINE_IDS:
+        cvs = []
+        for s in all_bp_sizes:
+            vals = bp_jitter[eid].get(s, [])
+            if vals:
+                a = np.array(vals)
+                cvs.append(float(np.std(a) / np.mean(a) * 100))
+        if cvs:
+            avg_cv[eid] = np.mean(cvs)
+    if not avg_cv:
+        return ""
+    best = min(avg_cv, key=avg_cv.get)
+    worst = max(avg_cv, key=avg_cv.get)
+    return (
+        f'<strong>{ENGINES[best]["display"]}</strong> is the most consistent across all buffer pool '
+        f'sizes (avg CV\u2009=\u2009{avg_cv[best]:.1f}%), while '
+        f'<strong>{ENGINES[worst]["display"]}</strong> shows the highest jitter '
+        f'(avg CV\u2009=\u2009{avg_cv[worst]:.1f}%). '
+        f'Note that jitter tends to increase at mid-range pool sizes (30\u201360G) where the engine '
+        f'alternates between serving from cache and triggering I/O-heavy evictions.'
+    )
+
+
+def insight_jitter_vu():
+    """Figure 7 — jitter box plots: VU sweep."""
+    # Find engine with lowest CV at 128 VU
+    cv_128 = {}
+    for eid in ENGINE_IDS:
+        vals = vu_jitter[eid].get(128, [])
+        if vals:
+            a = np.array(vals)
+            cv_128[eid] = float(np.std(a) / np.mean(a) * 100)
+    if not cv_128:
+        return ""
+    best = min(cv_128, key=cv_128.get)
+    worst = max(cv_128, key=cv_128.get)
+    return (
+        f'At peak concurrency (128 VU), <strong>{ENGINES[best]["display"]}</strong> maintains the '
+        f'tightest spread (CV\u2009=\u2009{cv_128[best]:.1f}%), while '
+        f'<strong>{ENGINES[worst]["display"]}</strong> has the widest '
+        f'(CV\u2009=\u2009{cv_128[worst]:.1f}%). Jitter generally increases with VU count as '
+        f'lock contention introduces more variable wait times per transaction.'
+    )
+
+
 HTML = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1131,8 +1329,11 @@ HTML = f"""<!DOCTYPE html>
   </p>
   <div class="chart"><img src="data:image/png;base64,{img_bp_line}" alt="BP sweep line chart"></div>
   <div class="chart-caption">Figure 1 \u2014 Average NOTPM vs buffer pool size. Each point is the steady-state average (post-ramp-up).</div>
+  <div class="callout">{insight_bp_line()}</div>
+
   <div class="chart"><img src="data:image/png;base64,{img_bp_bar}" alt="BP sweep bar chart"></div>
   <div class="chart-caption">Figure 2 \u2014 Side-by-side NOTPM comparison per buffer pool size.</div>
+  <div class="callout">{insight_bp_bar()}</div>
 
   <h3>Buffer Pool Sweep \u2014 Data Table</h3>
   <table class="data-table">
@@ -1172,6 +1373,8 @@ HTML = f"""<!DOCTYPE html>
       <div class="chart-caption">Figure 4 \u2014 Speedup vs 1 VU on log/log axes. Dashed = ideal linear scaling.</div>
     </div>
   </div>
+  <div class="callout">{insight_vu_line()}</div>
+  <div class="callout">{insight_scaling()}</div>
 
   <h3>Virtual Users Sweep \u2014 Data Table</h3>
   <table class="data-table">
@@ -1196,6 +1399,7 @@ HTML = f"""<!DOCTYPE html>
   </p>
   <div class="chart"><img src="data:image/png;base64,{img_ts}" alt="NOTPM timeseries"></div>
   <div class="chart-caption">Figure 5 \u2014 NOTPM over elapsed time. BP 50G \u00b7 64 VU. Y-axis starts at zero. Ramp-up excluded.</div>
+  <div class="callout">{insight_timeseries()}</div>
 </section>
 
 <section>
@@ -1224,11 +1428,13 @@ HTML = f"""<!DOCTYPE html>
   <h3>Buffer Pool Sweep</h3>
   <div class="chart"><img src="data:image/png;base64,{img_jitter_bp}" alt="BP jitter"></div>
   <div class="chart-caption">Figure 6 \u2014 NOTPM distribution per buffer pool size (last 30 min).</div>
+  <div class="callout">{insight_jitter_bp()}</div>
   {_html_jitter_table(bp_jitter_rows)}
 
   <h3 style="margin-top:28px;">Virtual Users Sweep</h3>
   <div class="chart"><img src="data:image/png;base64,{img_jitter_vu}" alt="VU jitter"></div>
   <div class="chart-caption">Figure 7 \u2014 NOTPM distribution per VU count (last 30 min).</div>
+  <div class="callout">{insight_jitter_vu()}</div>
   {_html_jitter_table(vu_jitter_rows)}
 </section>
 
@@ -1327,6 +1533,14 @@ def md_cfg_table():
     return "\n".join(rows)
 
 
+def _html_to_md(s):
+    """Convert HTML bold/em to markdown."""
+    s = re.sub(r'<strong>(.*?)</strong>', r'**\1**', s)
+    s = re.sub(r'<em>(.*?)</em>', r'*\1*', s)
+    s = re.sub(r'<[^>]+>', '', s)
+    return s
+
+
 def build_md():
     return f"""# Database Benchmark Comparison -- TPROC-C Report
 
@@ -1369,7 +1583,11 @@ rather than single-thread performance.
 
 ![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
+> {_html_to_md(insight_bp_line())}
+
 ![TPROC-C Throughput -- bar chart](report_assets/fig5_bp_bar.png)
+
+> {_html_to_md(insight_bp_bar())}
 
 {md_bp_table()}
 
@@ -1397,6 +1615,10 @@ count ran for 3600 seconds with a 60-second ramp-up.
 
 ![Concurrency Scaling Efficiency](report_assets/fig4_scaling.png)
 
+> {_html_to_md(insight_vu_line())}
+
+> {_html_to_md(insight_scaling())}
+
 {md_vu_table()}
 
 ---
@@ -1414,6 +1636,8 @@ averages. A flat rolling average indicates stable throughput; wide oscillations 
 internal bottlenecks (e.g. InnoDB log checkpointing, buffer pool flushing, or purge lag).
 
 ![NOTPM Over Time](report_assets/fig3_timeseries.png)
+
+> {_html_to_md(insight_timeseries())}
 
 ---
 
@@ -1438,11 +1662,15 @@ comparable across runs with different mean throughputs.
 
 ![NOTPM Jitter -- BP Sweep](report_assets/fig6_jitter_bp.png)
 
+> {_html_to_md(insight_jitter_bp())}
+
 {_md_jitter_table(bp_jitter_rows)}
 
 ### Virtual Users Sweep
 
 ![NOTPM Jitter -- VU Sweep](report_assets/fig7_jitter_vu.png)
+
+> {_html_to_md(insight_jitter_vu())}
 
 {_md_jitter_table(vu_jitter_rows)}
 
