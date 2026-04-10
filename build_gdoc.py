@@ -1259,6 +1259,8 @@ HTML = f"""<!DOCTYPE html>
     <code>innodb_buffer_pool_instances</code> is automatically scaled with the buffer pool:
     <code>instances = buffer_pool_size_GB / 5</code> (minimum 1), so each instance manages
     at least 5 GiB. For the 80G configuration shown below this gives 16 instances.
+    The InnoDB redo log is set to 32 GiB \u2014 deliberately oversized so that log capacity
+    is never a bottleneck and no engine is limited by checkpoint pressure from log space exhaustion.
     <span style="color:#f97316;font-weight:600;">MariaDB-only</span> parameters are highlighted.
     Parameters that differ are marked <span style="color:#a78bfa;font-weight:600;">purple</span>.
   </p>
@@ -1504,6 +1506,8 @@ All engines used the same base `my.cnf`. The only parameter that varies across r
 `innodb_buffer_pool_size`. `innodb_buffer_pool_instances` is automatically scaled with the
 buffer pool: `instances = buffer_pool_size_GB / 5` (minimum 1), so each instance manages at
 least 5 GiB. For the 80G configuration shown below this gives 16 instances.
+The InnoDB redo log is set to 32 GiB -- deliberately oversized so that log capacity is never
+a bottleneck and no engine is limited by checkpoint pressure from log space exhaustion.
 
 {_md_cfg_table()}
 
