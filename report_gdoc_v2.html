@@ -288,25 +288,7 @@
   </p>
   <table class="data-table cfg-table">
     <thead><tr><th>Parameter</th><th style="color:#d95f02">MariaDB 12.2.2</th><th style="color:#e6ab02">MariaDB 12.3.1</th><th style="color:#1b9e77">MySQL 8.4.8</th><th style="color:#7570b3">MySQL 9.7.0</th></tr></thead>
-    <tbody><tr class="cfg-section"><td colspan="5">General</td></tr>
-<tr><td class="cfg-param">bind-address</td><td>0.0.0.0</td><td>0.0.0.0</td><td>0.0.0.0</td><td>0.0.0.0</td></tr>
-<tr><td class="cfg-param">datadir</td><td>/var/lib/mysql</td><td>/var/lib/mysql</td><td>/var/lib/mysql</td><td>/var/lib/mysql</td></tr>
-<tr><td class="cfg-param">performance_schema</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
-<tr><td class="cfg-param">pid-file</td><td>/var/run/mysqld/mysqld.pid</td><td>/var/run/mysqld/mysqld.pid</td><td>/var/run/mysqld/mysqld.pid</td><td>/var/run/mysqld/mysqld.pid</td></tr>
-<tr><td class="cfg-param">port</td><td>3306</td><td>3306</td><td>3306</td><td>3306</td></tr>
-<tr><td class="cfg-param">skip-name-resolve</td><td>ON</td><td>ON</td><td>ON</td><td>ON</td></tr>
-<tr><td class="cfg-param">socket</td><td>/var/run/mysqld/mysqld.sock</td><td>/var/run/mysqld/mysqld.sock</td><td>/var/run/mysqld/mysqld.sock</td><td>/var/run/mysqld/mysqld.sock</td></tr>
-<tr><td class="cfg-param">user</td><td>mysql</td><td>mysql</td><td>mysql</td><td>mysql</td></tr>
-<tr class="cfg-section"><td colspan="5">Connections</td></tr>
-<tr><td class="cfg-param">back_log</td><td>4096</td><td>4096</td><td>4096</td><td>4096</td></tr>
-<tr><td class="cfg-param">connect_timeout</td><td>10</td><td>10</td><td>10</td><td>10</td></tr>
-<tr><td class="cfg-param">interactive_timeout</td><td>300</td><td>300</td><td>300</td><td>300</td></tr>
-<tr><td class="cfg-param">max_connect_errors</td><td>1000000</td><td>1000000</td><td>1000000</td><td>1000000</td></tr>
-<tr><td class="cfg-param">max_connections</td><td>2000</td><td>2000</td><td>2000</td><td>2000</td></tr>
-<tr><td class="cfg-param">thread_cache_size</td><td>256</td><td>256</td><td>256</td><td>256</td></tr>
-<tr><td class="cfg-param">thread_stack</td><td>512K</td><td>512K</td><td>512K</td><td>512K</td></tr>
-<tr><td class="cfg-param">wait_timeout</td><td>300</td><td>300</td><td>300</td><td>300</td></tr>
-<tr class="cfg-section"><td colspan="5">InnoDB Buffer</td></tr>
+    <tbody><tr class="cfg-section"><td colspan="5">InnoDB Buffer</td></tr>
 <tr><td class="cfg-param">innodb_buffer_pool_instances</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>16</td><td>16</td></tr>
 <tr><td class="cfg-param">innodb_buffer_pool_size</td><td>80G</td><td>80G</td><td>80G</td><td>80G</td></tr>
 <tr class="cfg-section"><td colspan="5">InnoDB I/O</td></tr>
@@ -338,14 +320,6 @@
 <tr><td class="cfg-param">log_bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td></tr>
 <tr><td class="cfg-param">max_binlog_size</td><td>512M</td><td>512M</td><td>512M</td><td>512M</td></tr>
 <tr><td class="cfg-param">sync_binlog</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
-<tr class="cfg-section"><td colspan="5">Buffers</td></tr>
-<tr><td class="cfg-param">bulk_insert_buffer_size</td><td>256M</td><td>256M</td><td>256M</td><td>256M</td></tr>
-<tr><td class="cfg-param">join_buffer_size</td><td>4M</td><td>4M</td><td>4M</td><td>4M</td></tr>
-<tr><td class="cfg-param">max_heap_table_size</td><td>256M</td><td>256M</td><td>256M</td><td>256M</td></tr>
-<tr><td class="cfg-param">read_buffer_size</td><td>2M</td><td>2M</td><td>2M</td><td>2M</td></tr>
-<tr><td class="cfg-param">read_rnd_buffer_size</td><td>4M</td><td>4M</td><td>4M</td><td>4M</td></tr>
-<tr><td class="cfg-param">sort_buffer_size</td><td>4M</td><td>4M</td><td>4M</td><td>4M</td></tr>
-<tr><td class="cfg-param">tmp_table_size</td><td>256M</td><td>256M</td><td>256M</td><td>256M</td></tr>
 <tr class="cfg-section"><td colspan="5">Cache / Misc</td></tr>
 <tr><td class="cfg-param">character_set_server</td><td>utf8mb4</td><td>utf8mb4</td><td>utf8mb4</td><td>utf8mb4</td></tr>
 <tr><td class="cfg-param">collation_server</td><td>utf8mb4_unicode_ci</td><td>utf8mb4_unicode_ci</td><td>utf8mb4_unicode_ci</td><td>utf8mb4_unicode_ci</td></tr>
@@ -383,7 +357,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-10 11:29
+  Report generated 2026-04-10 11:33
 </footer>
 
 </body>

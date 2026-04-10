@@ -236,24 +236,6 @@ tail-latency violations.
 
 | Parameter | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 | Note |
 |-----------| --- | --- | --- | --- | ------ |
-| **General** | | | | | |
-| `bind-address` | `0.0.0.0` | `0.0.0.0` | `0.0.0.0` | `0.0.0.0` |  |
-| `datadir` | `/var/lib/mysql` | `/var/lib/mysql` | `/var/lib/mysql` | `/var/lib/mysql` |  |
-| `performance_schema` | `OFF` | `OFF` | `OFF` | `OFF` |  |
-| `pid-file` | `/var/run/mysqld/mysqld.pid` | `/var/run/mysqld/mysqld.pid` | `/var/run/mysqld/mysqld.pid` | `/var/run/mysqld/mysqld.pid` |  |
-| `port` | `3306` | `3306` | `3306` | `3306` |  |
-| `skip-name-resolve` | `ON` | `ON` | `ON` | `ON` |  |
-| `socket` | `/var/run/mysqld/mysqld.sock` | `/var/run/mysqld/mysqld.sock` | `/var/run/mysqld/mysqld.sock` | `/var/run/mysqld/mysqld.sock` |  |
-| `user` | `mysql` | `mysql` | `mysql` | `mysql` |  |
-| **Connections** | | | | | |
-| `back_log` | `4096` | `4096` | `4096` | `4096` |  |
-| `connect_timeout` | `10` | `10` | `10` | `10` |  |
-| `interactive_timeout` | `300` | `300` | `300` | `300` |  |
-| `max_connect_errors` | `1000000` | `1000000` | `1000000` | `1000000` |  |
-| `max_connections` | `2000` | `2000` | `2000` | `2000` |  |
-| `thread_cache_size` | `256` | `256` | `256` | `256` |  |
-| `thread_stack` | `512K` | `512K` | `512K` | `512K` |  |
-| `wait_timeout` | `300` | `300` | `300` | `300` |  |
 | **InnoDB Buffer** | | | | | |
 | `innodb_buffer_pool_instances` |  |  | `16` | `16` |  |
 | `innodb_buffer_pool_size` | `80G` | `80G` | `80G` | `80G` |  |
@@ -286,14 +268,6 @@ tail-latency violations.
 | `log_bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` |  |
 | `max_binlog_size` | `512M` | `512M` | `512M` | `512M` |  |
 | `sync_binlog` | `1` | `1` | `1` | `1` |  |
-| **Buffers** | | | | | |
-| `bulk_insert_buffer_size` | `256M` | `256M` | `256M` | `256M` |  |
-| `join_buffer_size` | `4M` | `4M` | `4M` | `4M` |  |
-| `max_heap_table_size` | `256M` | `256M` | `256M` | `256M` |  |
-| `read_buffer_size` | `2M` | `2M` | `2M` | `2M` |  |
-| `read_rnd_buffer_size` | `4M` | `4M` | `4M` | `4M` |  |
-| `sort_buffer_size` | `4M` | `4M` | `4M` | `4M` |  |
-| `tmp_table_size` | `256M` | `256M` | `256M` | `256M` |  |
 | **Cache / Misc** | | | | | |
 | `character_set_server` | `utf8mb4` | `utf8mb4` | `utf8mb4` | `utf8mb4` |  |
 | `collation_server` | `utf8mb4_unicode_ci` | `utf8mb4_unicode_ci` | `utf8mb4_unicode_ci` | `utf8mb4_unicode_ci` |  |

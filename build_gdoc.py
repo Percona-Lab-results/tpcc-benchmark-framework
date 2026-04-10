@@ -463,12 +463,19 @@ MARIA_ONLY = {
     "innodb_log_file_write_through",
 }
 
+# Sections excluded from config table (not interesting for benchmark comparison)
+_CFG_SKIP = {
+    "user","datadir","socket","pid-file","bind-address","port",
+    "skip-name-resolve","performance_schema",
+    "max_connections","max_connect_errors","thread_stack",
+    "thread_cache_size","back_log","wait_timeout",
+    "interactive_timeout","connect_timeout",
+    "sort_buffer_size","join_buffer_size","read_buffer_size",
+    "read_rnd_buffer_size","tmp_table_size","max_heap_table_size",
+    "bulk_insert_buffer_size",
+}
+
 SECTION_MAP = OrderedDict([
-    ("General",         {"user","datadir","socket","pid-file","bind-address","port",
-                         "skip-name-resolve","performance_schema"}),
-    ("Connections",     {"max_connections","max_connect_errors","thread_stack",
-                         "thread_cache_size","back_log","wait_timeout",
-                         "interactive_timeout","connect_timeout"}),
     ("InnoDB Buffer",   {"innodb_buffer_pool_size","innodb_buffer_pool_instances"}),
     ("InnoDB I/O",      {"innodb_io_capacity","innodb_io_capacity_max",
                          "innodb_read_io_threads","innodb_write_io_threads",
@@ -483,9 +490,6 @@ SECTION_MAP = OrderedDict([
     ("Binary Log",      {"log_bin","binlog_format","binlog_row_image",
                          "expire_logs_days","sync_binlog","binlog_cache_size",
                          "max_binlog_size"}),
-    ("Buffers",         {"sort_buffer_size","join_buffer_size","read_buffer_size",
-                         "read_rnd_buffer_size","tmp_table_size","max_heap_table_size",
-                         "bulk_insert_buffer_size"}),
     ("Cache / Misc",    {"query_cache_type","query_cache_size","table_open_cache",
                          "table_definition_cache","open_files_limit",
                          "max_allowed_packet","key_buffer_size",
@@ -547,7 +551,7 @@ def build_cfg_rows():
     all_keys = set()
     for eid in ENGINE_IDS:
         all_keys |= set(engine_cnfs[eid].keys())
-    for k in sorted(all_keys - seen):
+    for k in sorted(all_keys - seen - _CFG_SKIP):
         vals = {eid: engine_cnfs[eid].get(k, "") for eid in ENGINE_IDS}
         rest.append(("Other", k, vals))
     rows.extend(rest)
