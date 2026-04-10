@@ -2,22 +2,22 @@
 
 **HammerDB 4.12 | TPROC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
 **Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
-**OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: 2026-04-09
-**Engines:** MariaDB 12.2.2, MariaDB 12.3.1, MySQL 8.4.8, MySQL 9.7.0-er2
+**OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: 2026-04-10
+**Engines:** MariaDB 12.2.2, MariaDB 12.3.1, MySQL 8.4.8, MySQL 9.7.0
 
 ---
 
 ## Executive Summary
 
 | Metric | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|--------|---|---|---|---|
+|--------|---||---||---||---|
 | Peak NOTPM (BP 80G, 64 VU) | 465,174 | 454,947 | 404,778 | 459,969 |
 | Peak NOTPM (BP 50G, 128 VU) | 244,031 | 251,980 | 323,106 | 376,139 |
 | Scaling 1->128 VU (BP 50G) | 19x | 20x | 29x | 28x |
 
 ---
 
-## Buffer Pool Sweep -- 64 VU, 10G-80G
+## Buffer Pool Iterations -- 64 VU, 10G-80G
 
 The **InnoDB Buffer Pool** is the main memory area where InnoDB caches table data and index
 pages. Every read that hits the buffer pool avoids a disk I/O; every miss forces a physical
@@ -25,7 +25,7 @@ read from storage. For write-heavy OLTP workloads like TPROC-C, the buffer pool 
 dirty pages waiting to be flushed -- a larger pool means fewer flush cycles and less I/O
 contention between foreground transactions and background flushing.
 
-A **buffer pool sweep** varies this single parameter (from 10 GiB to 80 GiB in 10 GiB steps)
+A **buffer pool iteration** varies this single parameter (from 10 GiB to 80 GiB in 10 GiB steps)
 while holding everything else constant -- 64 virtual users, 1000 warehouses (~100 GB working
 set), same hardware, same configuration. This isolates the effect of memory pressure on
 throughput. At small pool sizes (10-30G) only a fraction of the hot data fits in RAM, so
@@ -39,10 +39,8 @@ rather than single-thread performance.
 
 ![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
-![TPROC-C Throughput -- bar chart](report_assets/fig5_bp_bar.png)
-
 | BP Size | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|---------|---|---|---|---|
+|---------|---||---||---||---|
 | 10G | 120,150 | 133,515 | **167,616** | 152,895 |
 | 20G | 179,193 | 184,512 | 197,955 | **216,523** |
 | 30G | 211,528 | 217,949 | 223,770 | **246,461** |
@@ -54,7 +52,7 @@ rather than single-thread performance.
 
 ---
 
-## Virtual Users Sweep -- BP 50G, 1-128 VU
+## Virtual Users Iterations -- BP 50G, 1-128 VU
 
 A **Virtual User (VU)** is a HammerDB worker thread that simulates an independent database
 client. Each VU opens its own connection, picks a random warehouse, and continuously executes
@@ -69,15 +67,25 @@ internal latch contention and lock waits become the dominant bottleneck. The poi
 throughput plateaus reveals how efficiently the engine scales under parallel workloads -- a
 critical metric for multi-tenant and connection-pool-heavy OLTP deployments.
 
-Concurrency was swept from 1 to 128 virtual users with a fixed 50 GiB buffer pool. Each VU
+Concurrency was iterated from 1 to 128 virtual users with a fixed 50 GiB buffer pool. Each VU
 count ran for 3600 seconds with a 60-second ramp-up.
 
 ![TPROC-C Throughput vs Concurrency](report_assets/fig2_vu_line.png)
 
 ![Concurrency Scaling Efficiency](report_assets/fig4_scaling.png)
 
+**Note on scaling vs peak throughput:** MySQL 9.7 delivers the highest absolute NOTPM at every
+concurrency level, yet its relative scaling factor (1->128 VU) is lower than MySQL 8.4. This is
+expected: MySQL 9.7 starts from a significantly higher single-thread baseline, so it saturates
+the available CPU resources sooner in relative terms. Beyond the physical core count (40 cores /
+80 HT threads on this system), even a perfectly scalable engine cannot maintain linear speedup --
+threads begin competing for the same execution units, and InnoDB internal serialisation points
+(lock manager, redo log, buffer pool latches) become the bottleneck. A higher baseline simply
+means the engine hits that ceiling at a lower multiplier, not that it scales worse in absolute
+terms.
+
 | VU | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|----|---|---|---|---|
+|----|---||---||---||---|
 | 1 | 12,746 | 12,730 | 11,075 | **13,637** |
 | 2 | 26,244 | 25,844 | 22,655 | **30,790** |
 | 4 | 50,325 | 49,569 | 45,079 | **59,964** |
@@ -122,9 +130,17 @@ extend to P5-P95. The tables include **CV%** (Coefficient of Variation = std / m
 a scale-free measure where lower is more stable. Unlike raw standard deviation, CV% is directly
 comparable across runs with different mean throughputs.
 
-### Buffer Pool Sweep
+### Buffer Pool Iterations
 
-![NOTPM Jitter -- BP Sweep](report_assets/fig6_jitter_bp.png)
+![NOTPM Jitter -- BP Iterations](report_assets/fig6_jitter_bp.png)
+
+At small buffer pool sizes (10-50G), both MariaDB versions exhibit noticeably wider NOTPM spread
+(CV 12-26%) compared to MySQL 8.4 and 9.7 (CV 7-10%). This suggests more aggressive checkpoint
+flushing and dirty-page eviction under memory pressure in MariaDB, which creates periodic
+throughput dips. As the buffer pool approaches the working set size (70-80G), all four engines
+converge to similar jitter levels (CV 4-7%), confirming that the instability is I/O-driven rather
+than an inherent engine limitation. MySQL 8.4 stands out as the most consistently stable across
+all buffer pool sizes.
 
 | Config | Engine | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
 |--------|--------|-----------|---------|-----|-----|-----|-------------|
@@ -161,9 +177,17 @@ comparable across runs with different mean throughputs.
 | 80G | MySQL 8.4.8 | 434,553 | 30,190 | 6.9% | 384,766 | 466,765 | 81,999 |
 | 80G | MySQL 9.7.0 | 502,577 | 33,151 | 6.6% | 449,393 | 541,258 | 91,864 |
 
-### Virtual Users Sweep
+### Virtual Users Iterations
 
-![NOTPM Jitter -- VU Sweep](report_assets/fig7_jitter_vu.png)
+![NOTPM Jitter -- VU Iterations](report_assets/fig7_jitter_vu.png)
+
+Jitter increases with concurrency for all engines, but the divergence is striking: at 64-128 VU,
+both MariaDB versions reach CV 24-26%, while MySQL 8.4 stays at 8-10% and MySQL 9.7 at 10-11%.
+At low concurrency (1-8 VU), all engines are tightly clustered below CV 7%, indicating the gap
+is driven by internal contention under heavy parallelism -- likely lock manager scheduling, purge
+thread interference, or adaptive flushing behaviour. For latency-sensitive applications, MySQL's
+lower jitter at high concurrency translates directly to more predictable response times and fewer
+tail-latency violations.
 
 | Config | Engine | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |
 |--------|--------|-----------|---------|-----|-----|-----|-------------|
@@ -205,7 +229,7 @@ comparable across runs with different mean throughputs.
 ## Database Configuration
 
 | Parameter | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 | Note |
-|-----------|---|---|---|---|------|
+|-----------|---||---||---||---|------|
 | **General** | | | | | |
 | `bind-address` | `0.0.0.0` | `0.0.0.0` | `0.0.0.0` | `0.0.0.0` |  |
 | `datadir` | `/var/lib/mysql` | `/var/lib/mysql` | `/var/lib/mysql` | `/var/lib/mysql` |  |
@@ -289,10 +313,10 @@ comparable across runs with different mean throughputs.
 - **Workload:** 1000 warehouses (~100 GB), 60 s ramp-up, 3600 s measurement window
 - **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
 - **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
-- **Engines:** MariaDB 12.2.2, MariaDB 12.3.1, MySQL 8.4.8, MySQL 9.7.0-er2
+- **Engines:** MariaDB 12.2.2, MariaDB 12.3.1, MySQL 8.4.8, MySQL 9.7.0
 - **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPROC-C new-order mix is 45%)
-- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps
-- **VU sweep:** 50 GiB buffer pool, VU in {1, 2, 4, 8, 16, 32, 64, 128}
+- **BP iterations:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps
+- **VU iterations:** 50 GiB buffer pool, VU in {1, 2, 4, 8, 16, 32, 64, 128}
 
 ---
 
