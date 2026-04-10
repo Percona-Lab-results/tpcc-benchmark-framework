@@ -10,7 +10,7 @@
 ## Executive Summary
 
 | Metric | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|--------|---||---||---||---|
+|--------| --- | --- | --- | --- |
 | Peak NOTPM (BP 80G, 64 VU) | 465,174 | 454,947 | 404,778 | 459,969 |
 | Peak NOTPM (BP 50G, 128 VU) | 244,031 | 251,980 | 323,106 | 376,139 |
 | Scaling 1->128 VU (BP 50G) | 19x | 20x | 29x | 28x |
@@ -40,7 +40,7 @@ rather than single-thread performance.
 ![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
 | BP Size | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|---------|---||---||---||---|
+|---------| --- | --- | --- | --- |
 | 10G | 120,150 | 133,515 | **167,616** | 152,895 |
 | 20G | 179,193 | 184,512 | 197,955 | **216,523** |
 | 30G | 211,528 | 217,949 | 223,770 | **246,461** |
@@ -85,7 +85,7 @@ means the engine hits that ceiling at a lower multiplier, not that it scales wor
 terms.
 
 | VU | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|----|---||---||---||---|
+|----| --- | --- | --- | --- |
 | 1 | 12,746 | 12,730 | 11,075 | **13,637** |
 | 2 | 26,244 | 25,844 | 22,655 | **30,790** |
 | 4 | 50,325 | 49,569 | 45,079 | **59,964** |
@@ -229,7 +229,7 @@ tail-latency violations.
 ## Database Configuration
 
 | Parameter | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 | Note |
-|-----------|---||---||---||---|------|
+|-----------| --- | --- | --- | --- | ------ |
 | **General** | | | | | |
 | `bind-address` | `0.0.0.0` | `0.0.0.0` | `0.0.0.0` | `0.0.0.0` |  |
 | `datadir` | `/var/lib/mysql` | `/var/lib/mysql` | `/var/lib/mysql` | `/var/lib/mysql` |  |

@@ -1200,7 +1200,7 @@ print(f"Google Docs report written -> {out}")
 def _md_bp_table():
     lines = [
         f"| BP Size | {' | '.join(ENGINES[e]['display'] for e in ENGINE_IDS)} |",
-        f"|---------|{'|'.join('---|' for _ in ENGINE_IDS)}",
+        f"|---------| {' | '.join('---' for _ in ENGINE_IDS)} |",
     ]
     for row in bp_table_rows:
         vals = [row[eid] for eid in ENGINE_IDS]
@@ -1213,7 +1213,7 @@ def _md_bp_table():
 def _md_vu_table():
     lines = [
         f"| VU | {' | '.join(ENGINES[e]['display'] for e in ENGINE_IDS)} |",
-        f"|----|{'|'.join('---|' for _ in ENGINE_IDS)}",
+        f"|----| {' | '.join('---' for _ in ENGINE_IDS)} |",
     ]
     for row in vu_table_rows:
         vals = [row[eid] for eid in ENGINE_IDS]
@@ -1226,7 +1226,7 @@ def _md_vu_table():
 def _md_exec_summary():
     lines = [
         f"| Metric | {' | '.join(ENGINES[e]['display'] for e in ENGINE_IDS)} |",
-        f"|--------|{'|'.join('---|' for _ in ENGINE_IDS)}",
+        f"|--------| {' | '.join('---' for _ in ENGINE_IDS)} |",
         f"| Peak NOTPM (BP 80G, 64 VU) | {' | '.join(f'{int(kpi_peak_bp[e]):,}' for e in ENGINE_IDS)} |",
         f"| Peak NOTPM (BP 50G, 128 VU) | {' | '.join(f'{int(kpi_peak_vu[e]):,}' for e in ENGINE_IDS)} |",
         f"| Scaling 1->128 VU (BP 50G) | {' | '.join(f'{kpi_scaling[e]:.0f}x' for e in ENGINE_IDS)} |",
@@ -1238,7 +1238,7 @@ def _md_exec_summary():
 def _md_cfg_table():
     lines = [
         f"| Parameter | {' | '.join(ENGINES[e]['display'] for e in ENGINE_IDS)} | Note |",
-        f"|-----------|{'|'.join('---|' for _ in ENGINE_IDS)}------|",
+        f"|-----------| {' | '.join('---' for _ in ENGINE_IDS)} | ------ |",
     ]
     cur_section = None
     for section, param, vals in cfg_rows:
