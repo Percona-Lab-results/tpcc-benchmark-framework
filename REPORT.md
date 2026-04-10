@@ -238,6 +238,7 @@ All engines used the same base `my.cnf`. The only parameter that varies across r
 `innodb_buffer_pool_size`. `innodb_buffer_pool_instances` is automatically scaled with the
 buffer pool: `instances = buffer_pool_size_GB / 5` (minimum 1), so each instance manages at
 least 5 GiB. For the 80G configuration shown below this gives 16 instances.
+This applies to MySQL only -- MariaDB supports only a single buffer pool instance.
 The InnoDB redo log is set to 32 GiB -- deliberately oversized so that log capacity is never
 a bottleneck and no engine is limited by checkpoint pressure from log space exhaustion.
 
