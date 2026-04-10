@@ -6,11 +6,11 @@ HAMMERDB_VERSION="4.12"
 HAMMERDB_DIR="/opt/hammerdb"
 HAMMERDB_URL="https://github.com/TPC-Council/HammerDB/releases/download/v${HAMMERDB_VERSION}/HammerDB-${HAMMERDB_VERSION}-Linux.tar.gz"
 
-MARIADB_HOST="127.0.0.1"
-MARIADB_PORT="3306"
-MARIADB_USER="root"
-MARIADB_PASS="rootpassword"
-MARIADB_DB="tpcc"
+MARIADB_HOST="${DB_HOST:-127.0.0.1}"
+MARIADB_PORT="${DB_PORT:-3306}"
+MARIADB_USER="${DB_USER:-root}"
+MARIADB_PASS="${DB_PASS:-rootpassword}"
+MARIADB_DB="${DB_NAME:-tpcc}"
 
 WAREHOUSES=1000        # Must match the already-loaded schema
 TEST_VU=64             # Virtual users for benchmark run

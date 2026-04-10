@@ -74,10 +74,16 @@ case "$DB" in
         START="${SCRIPT_DIR}/start_mariadb123.sh"
         CONTAINER="mariadb123"
         ;;
-    *) die "Unknown DB: ${DB}. Use mariadb, mysql, percona, mysql97, or mariadb123." ;;
+    seekdb)
+        CNF=""
+        START="${SCRIPT_DIR}/start_seekdb.sh"
+        CONTAINER="seekdb"
+        export DB_PORT=2881 DB_PASS=password
+        ;;
+    *) die "Unknown DB: ${DB}. Use mariadb, mysql, percona, mysql97, mariadb123, or seekdb." ;;
 esac
 
-[[ -f "$CNF" ]] || die "Config not found: ${CNF}"
+[[ -n "$CNF" && ! -f "$CNF" ]] && die "Config not found: ${CNF}"
 [[ -f "$START" ]] || die "Start script not found: ${START}"
 
 # Build VU list: 1, 2, 4, 8, 16, 32, 64, 128
@@ -90,23 +96,24 @@ done
 
 log "Sweep: DB=${DB} BP=${BP}G VUs=${VU_LIST[*]} duration=${DURATION}s"
 
-# Save original config
-cp "$CNF" "${CNF}.bak"
-trap 'cat "${CNF}.bak" > "$CNF"; rm -f "${CNF}.bak"' EXIT
+# Save original config and patch buffer pool (skip for DBs without cnf)
+if [[ -n "$CNF" ]]; then
+    cp "$CNF" "${CNF}.bak"
+    trap 'cat "${CNF}.bak" > "$CNF"; rm -f "${CNF}.bak"' EXIT
 
-# Patch buffer pool size
-instances=$(( BP / 5 ))
-[[ "$instances" -lt 1 ]] && instances=1
-sed "s/^innodb_buffer_pool_size.*/innodb_buffer_pool_size         = ${BP}G/" "$CNF" > "${CNF}.tmp"
-if grep -q "^innodb_buffer_pool_instances" "${CNF}.tmp"; then
-    sed -i "s/^innodb_buffer_pool_instances.*/innodb_buffer_pool_instances    = ${instances}/" "${CNF}.tmp"
+    instances=$(( BP / 5 ))
+    [[ "$instances" -lt 1 ]] && instances=1
+    sed "s/^innodb_buffer_pool_size.*/innodb_buffer_pool_size         = ${BP}G/" "$CNF" > "${CNF}.tmp"
+    if grep -q "^innodb_buffer_pool_instances" "${CNF}.tmp"; then
+        sed -i "s/^innodb_buffer_pool_instances.*/innodb_buffer_pool_instances    = ${instances}/" "${CNF}.tmp"
+    fi
+    cat "${CNF}.tmp" > "$CNF"
+    rm -f "${CNF}.tmp"
+    log "Config: $(grep -E 'innodb_buffer_pool_(size|instances)' "$CNF")"
 fi
-cat "${CNF}.tmp" > "$CNF"
-rm -f "${CNF}.tmp"
-log "Config: $(grep -E 'innodb_buffer_pool_(size|instances)' "$CNF")"
 
 # Stop any running DB containers first
-for c in $(docker ps -a --format '{{.Names}}' | grep -iE 'mysql|maria|percona'); do
+for c in $(docker ps -a --format '{{.Names}}' | grep -iE 'mysql|maria|percona|seekdb'); do
     docker rm -f "$c" 2>/dev/null || true
 done
 sleep 2
@@ -126,8 +133,8 @@ for vu in "${VU_LIST[@]}"; do
 
     # Wait for ready
     log "Waiting for ${DB} to be ready..."
-    retries=60
-    while ! mysql -h127.0.0.1 -P3306 -uroot -prootpassword -e "SELECT 1" &>/dev/null; do
+    retries=120
+    while ! mysql -h127.0.0.1 -P"${DB_PORT:-3306}" -u"${DB_USER:-root}" -p"${DB_PASS:-rootpassword}" -e "SELECT 1" &>/dev/null; do
         ((retries--)) || die "${DB} did not start for VU=${vu}"
         sleep 2
     done
