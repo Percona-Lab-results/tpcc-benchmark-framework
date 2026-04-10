@@ -241,6 +241,12 @@ least 5 GiB. For the 80G configuration shown below this gives 16 instances.
 This applies to MySQL only -- MariaDB supports only a single buffer pool instance.
 The InnoDB redo log is set to 32 GiB -- deliberately oversized so that log capacity is never
 a bottleneck and no engine is limited by checkpoint pressure from log space exhaustion.
+`innodb_io_capacity` is set to 10,000 to fully utilise the NVMe storage and avoid I/O throttling
+during background flushing. Direct I/O (`innodb_use_native_aio = ON`) bypasses the operating
+system page cache, allowing the database engine to manage its own memory via the buffer pool
+without double-caching. Binary logging is configured for full safety: `sync_binlog = 1` ensures
+every transaction is fsynced to the binlog before commit, and `innodb_flush_log_at_trx_commit = 1`
+flushes the redo log on each commit -- the most durable setting at the cost of some throughput.
 
 | Parameter | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 | Note |
 |-----------| --- | --- | --- | --- | ------ |
