@@ -493,54 +493,42 @@ SECTION_MAP = OrderedDict([
 ])
 
 
-def read_cnf(run_dir: str) -> dict[str, str]:
-    """Read mariadb.cnf from git and return active [mysqld] params."""
-    for fname in ("mariadb.cnf", "mysql.cnf", "mysql97.cnf", "percona.cnf"):
-        result = subprocess.run(
-            ["git", "show", f"HEAD:{run_dir}/{fname}"],
-            cwd=REPO, capture_output=True, text=True,
-        )
-        if result.returncode != 0 or not result.stdout.strip():
+def read_cnf_file(path: str) -> dict[str, str]:
+    """Read a .cnf file and return active [mysqld] params."""
+    try:
+        text = open(path, encoding="utf-8").read()
+    except FileNotFoundError:
+        return {}
+    params = {}
+    in_section = False
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("[mysqld]"):
+            in_section = True
             continue
-        params = {}
-        in_section = False
-        for line in result.stdout.splitlines():
-            line = line.strip()
-            if line.startswith("[mysqld]"):
-                in_section = True
-                continue
-            if line.startswith("[") and line != "[mysqld]":
-                in_section = False
-            if not in_section or not line or line.startswith("#"):
-                continue
-            line = re.sub(r"\s*#.*$", "", line).strip()
-            if "=" in line:
-                k, v = line.split("=", 1)
-                params[k.strip().lower()] = v.strip()
-        if params:
-            return params
-    return {}
+        if line.startswith("[") and line != "[mysqld]":
+            in_section = False
+        if not in_section or not line or line.startswith("#"):
+            continue
+        line = re.sub(r"\s*#.*$", "", line).strip()
+        if "=" in line:
+            k, v = line.split("=", 1)
+            params[k.strip().lower()] = v.strip()
+    return params
 
 
-def rep_run_dir(eid):
-    """Pick representative run: best NOTPM run from BP 80G iteration for the engine."""
-    cands = [
-        r for r in runs
-        if r["_eid"] == eid and "80G" in r["label"] and "sweep" in r["label"].lower()
-    ]
-    if not cands:
-        # fallback: any iteration run
-        cands = [r for r in runs if r["_eid"] == eid and "sweep" in r["label"].lower()]
-    if not cands:
-        return None
-    best = max(cands, key=lambda r: r["tps"].get("avg", 0))
-    return "results/" + best["run_name"]
+# Read config from root .cnf files (the actual config templates used for benchmarks)
+_CNF_MAP = {
+    "maria122": "mariadb.cnf",
+    "maria123": "mariadb.cnf",
+    "mysql84":  "mysql.cnf",
+    "mysql97":  "mysql97.cnf",
+}
 
-
-engine_cnfs = {}
-for eid in ENGINE_IDS:
-    rdir = rep_run_dir(eid)
-    engine_cnfs[eid] = read_cnf(rdir) if rdir else {}
+engine_cnfs = {
+    eid: read_cnf_file(_os.path.join(REPO, _CNF_MAP[eid]))
+    for eid in ENGINE_IDS
+}
 
 
 def build_cfg_rows():

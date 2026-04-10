@@ -307,14 +307,15 @@
 <tr><td class="cfg-param">thread_stack</td><td>512K</td><td>512K</td><td>512K</td><td>512K</td></tr>
 <tr><td class="cfg-param">wait_timeout</td><td>300</td><td>300</td><td>300</td><td>300</td></tr>
 <tr class="cfg-section"><td colspan="5">InnoDB Buffer</td></tr>
+<tr><td class="cfg-param">innodb_buffer_pool_instances</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>16</td><td>16</td></tr>
 <tr><td class="cfg-param">innodb_buffer_pool_size</td><td>80G</td><td>80G</td><td>80G</td><td>80G</td></tr>
 <tr class="cfg-section"><td colspan="5">InnoDB I/O</td></tr>
-<tr class="cfg-maria"><td class="cfg-param">innodb_data_file_buffering <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
-<tr class="cfg-maria"><td class="cfg-param">innodb_data_file_write_through <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
+<tr class="cfg-maria"><td class="cfg-param">innodb_data_file_buffering <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr class="cfg-maria"><td class="cfg-param">innodb_data_file_write_through <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
 <tr><td class="cfg-param">innodb_io_capacity</td><td>10000</td><td>10000</td><td>10000</td><td>10000</td></tr>
 <tr><td class="cfg-param">innodb_io_capacity_max</td><td>20000</td><td>20000</td><td>20000</td><td>20000</td></tr>
-<tr class="cfg-maria"><td class="cfg-param">innodb_log_file_buffering <span class="badge-maria">MariaDB only</span></td><td>ON</td><td>ON</td><td>ON</td><td>ON</td></tr>
-<tr class="cfg-maria"><td class="cfg-param">innodb_log_file_write_through <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
+<tr class="cfg-maria"><td class="cfg-param">innodb_log_file_buffering <span class="badge-maria">MariaDB only</span></td><td>ON</td><td>ON</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr class="cfg-maria"><td class="cfg-param">innodb_log_file_write_through <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
 <tr><td class="cfg-param">innodb_read_io_threads</td><td>16</td><td>16</td><td>16</td><td>16</td></tr>
 <tr><td class="cfg-param">innodb_use_native_aio</td><td>ON</td><td>ON</td><td>ON</td><td>ON</td></tr>
 <tr><td class="cfg-param">innodb_write_io_threads</td><td>16</td><td>16</td><td>16</td><td>16</td></tr>
@@ -322,18 +323,18 @@
 <tr><td class="cfg-param">innodb_doublewrite</td><td>ON</td><td>ON</td><td>ON</td><td>ON</td></tr>
 <tr><td class="cfg-param">innodb_flush_log_at_trx_commit</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
 <tr><td class="cfg-param">innodb_log_buffer_size</td><td>256M</td><td>256M</td><td>256M</td><td>256M</td></tr>
-<tr><td class="cfg-param">innodb_log_file_size</td><td>32G</td><td>32G</td><td>32G</td><td>32G</td></tr>
+<tr><td class="cfg-param">innodb_log_file_size</td><td>32G</td><td>32G</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
 <tr class="cfg-section"><td colspan="5">InnoDB OLTP</td></tr>
 <tr><td class="cfg-param">innodb_lock_wait_timeout</td><td>50</td><td>50</td><td>50</td><td>50</td></tr>
 <tr><td class="cfg-param">innodb_open_files</td><td>65536</td><td>65536</td><td>65536</td><td>65536</td></tr>
 <tr><td class="cfg-param">innodb_rollback_on_timeout</td><td>ON</td><td>ON</td><td>ON</td><td>ON</td></tr>
-<tr class="cfg-maria"><td class="cfg-param">innodb_snapshot_isolation <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
+<tr class="cfg-maria"><td class="cfg-param">innodb_snapshot_isolation <span class="badge-maria">MariaDB only</span></td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
 <tr><td class="cfg-param">innodb_stats_on_metadata</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
 <tr class="cfg-section"><td colspan="5">Binary Log</td></tr>
 <tr><td class="cfg-param">binlog_cache_size</td><td>4M</td><td>4M</td><td>4M</td><td>4M</td></tr>
 <tr><td class="cfg-param">binlog_format</td><td>ROW</td><td>ROW</td><td>ROW</td><td>ROW</td></tr>
 <tr><td class="cfg-param">binlog_row_image</td><td>MINIMAL</td><td>MINIMAL</td><td>MINIMAL</td><td>MINIMAL</td></tr>
-<tr><td class="cfg-param">expire_logs_days</td><td>7</td><td>7</td><td>7</td><td>7</td></tr>
+<tr><td class="cfg-param">expire_logs_days</td><td>7</td><td>7</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
 <tr><td class="cfg-param">log_bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td></tr>
 <tr><td class="cfg-param">max_binlog_size</td><td>512M</td><td>512M</td><td>512M</td><td>512M</td></tr>
 <tr><td class="cfg-param">sync_binlog</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
@@ -351,17 +352,22 @@
 <tr><td class="cfg-param">key_buffer_size</td><td>64M</td><td>64M</td><td>64M</td><td>64M</td></tr>
 <tr><td class="cfg-param">max_allowed_packet</td><td>64M</td><td>64M</td><td>64M</td><td>64M</td></tr>
 <tr><td class="cfg-param">open_files_limit</td><td>1000000</td><td>1000000</td><td>1000000</td><td>1000000</td></tr>
-<tr><td class="cfg-param">query_cache_size</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-<tr><td class="cfg-param">query_cache_type</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
+<tr><td class="cfg-param">query_cache_size</td><td>0</td><td>0</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr><td class="cfg-param">query_cache_type</td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
 <tr><td class="cfg-param">table_definition_cache</td><td>65536</td><td>65536</td><td>65536</td><td>65536</td></tr>
 <tr><td class="cfg-param">table_open_cache</td><td>65536</td><td>65536</td><td>65536</td><td>65536</td></tr>
 <tr class="cfg-section"><td colspan="5">Other</td></tr>
-<tr><td class="cfg-param">log_queries_not_using_indexes</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
-<tr><td class="cfg-param">long_query_time</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
-<tr><td class="cfg-param">min_examined_row_limit</td><td>1000</td><td>1000</td><td>1000</td><td>1000</td></tr>
-<tr><td class="cfg-param">myisam_sort_buffer_size</td><td>128M</td><td>128M</td><td>128M</td><td>128M</td></tr>
-<tr><td class="cfg-param">slow_query_log</td><td>ON</td><td>ON</td><td>ON</td><td>ON</td></tr>
-<tr><td class="cfg-param">slow_query_log_file</td><td>/var/lib/mysql/slow.log</td><td>/var/lib/mysql/slow.log</td><td>/var/lib/mysql/slow.log</td><td>/var/lib/mysql/slow.log</td></tr></tbody>
+<tr><td class="cfg-param">binlog_expire_logs_seconds</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>604800</td><td>604800</td></tr>
+<tr><td class="cfg-param">innodb_adaptive_flushing</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>ON</td><td>ON</td></tr>
+<tr><td class="cfg-param">innodb_adaptive_flushing_lwm</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>70</td><td>70</td></tr>
+<tr><td class="cfg-param">innodb_redo_log_capacity</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>32G</td><td>32G</td></tr>
+<tr><td class="cfg-param">log_queries_not_using_indexes</td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr><td class="cfg-param">long_query_time</td><td>1</td><td>1</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr><td class="cfg-param">min_examined_row_limit</td><td>1000</td><td>1000</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr><td class="cfg-param">myisam_sort_buffer_size</td><td>128M</td><td>128M</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr><td class="cfg-param">mysqlx</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>OFF</td><td>OFF</td></tr>
+<tr><td class="cfg-param">slow_query_log</td><td>ON</td><td>ON</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
+<tr><td class="cfg-param">slow_query_log_file</td><td>/var/lib/mysql/slow.log</td><td>/var/lib/mysql/slow.log</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr></tbody>
   </table>
 
 
@@ -377,7 +383,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-10 11:25
+  Report generated 2026-04-10 11:29
 </footer>
 
 </body>

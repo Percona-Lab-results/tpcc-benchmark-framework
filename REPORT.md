@@ -255,14 +255,15 @@ tail-latency violations.
 | `thread_stack` | `512K` | `512K` | `512K` | `512K` |  |
 | `wait_timeout` | `300` | `300` | `300` | `300` |  |
 | **InnoDB Buffer** | | | | | |
+| `innodb_buffer_pool_instances` |  |  | `16` | `16` |  |
 | `innodb_buffer_pool_size` | `80G` | `80G` | `80G` | `80G` |  |
 | **InnoDB I/O** | | | | | |
-| `innodb_data_file_buffering` | `OFF` | `OFF` | `OFF` | `OFF` | MariaDB only |
-| `innodb_data_file_write_through` | `OFF` | `OFF` | `OFF` | `OFF` | MariaDB only |
+| `innodb_data_file_buffering` | `OFF` | `OFF` |  |  | MariaDB only |
+| `innodb_data_file_write_through` | `OFF` | `OFF` |  |  | MariaDB only |
 | `innodb_io_capacity` | `10000` | `10000` | `10000` | `10000` |  |
 | `innodb_io_capacity_max` | `20000` | `20000` | `20000` | `20000` |  |
-| `innodb_log_file_buffering` | `ON` | `ON` | `ON` | `ON` | MariaDB only |
-| `innodb_log_file_write_through` | `OFF` | `OFF` | `OFF` | `OFF` | MariaDB only |
+| `innodb_log_file_buffering` | `ON` | `ON` |  |  | MariaDB only |
+| `innodb_log_file_write_through` | `OFF` | `OFF` |  |  | MariaDB only |
 | `innodb_read_io_threads` | `16` | `16` | `16` | `16` |  |
 | `innodb_use_native_aio` | `ON` | `ON` | `ON` | `ON` |  |
 | `innodb_write_io_threads` | `16` | `16` | `16` | `16` |  |
@@ -270,18 +271,18 @@ tail-latency violations.
 | `innodb_doublewrite` | `ON` | `ON` | `ON` | `ON` |  |
 | `innodb_flush_log_at_trx_commit` | `1` | `1` | `1` | `1` |  |
 | `innodb_log_buffer_size` | `256M` | `256M` | `256M` | `256M` |  |
-| `innodb_log_file_size` | `32G` | `32G` | `32G` | `32G` |  |
+| `innodb_log_file_size` | `32G` | `32G` |  |  |  |
 | **InnoDB OLTP** | | | | | |
 | `innodb_lock_wait_timeout` | `50` | `50` | `50` | `50` |  |
 | `innodb_open_files` | `65536` | `65536` | `65536` | `65536` |  |
 | `innodb_rollback_on_timeout` | `ON` | `ON` | `ON` | `ON` |  |
-| `innodb_snapshot_isolation` | `OFF` | `OFF` | `OFF` | `OFF` | MariaDB only |
+| `innodb_snapshot_isolation` | `OFF` | `OFF` |  |  | MariaDB only |
 | `innodb_stats_on_metadata` | `OFF` | `OFF` | `OFF` | `OFF` |  |
 | **Binary Log** | | | | | |
 | `binlog_cache_size` | `4M` | `4M` | `4M` | `4M` |  |
 | `binlog_format` | `ROW` | `ROW` | `ROW` | `ROW` |  |
 | `binlog_row_image` | `MINIMAL` | `MINIMAL` | `MINIMAL` | `MINIMAL` |  |
-| `expire_logs_days` | `7` | `7` | `7` | `7` |  |
+| `expire_logs_days` | `7` | `7` |  |  |  |
 | `log_bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` |  |
 | `max_binlog_size` | `512M` | `512M` | `512M` | `512M` |  |
 | `sync_binlog` | `1` | `1` | `1` | `1` |  |
@@ -299,17 +300,22 @@ tail-latency violations.
 | `key_buffer_size` | `64M` | `64M` | `64M` | `64M` |  |
 | `max_allowed_packet` | `64M` | `64M` | `64M` | `64M` |  |
 | `open_files_limit` | `1000000` | `1000000` | `1000000` | `1000000` |  |
-| `query_cache_size` | `0` | `0` | `0` | `0` |  |
-| `query_cache_type` | `OFF` | `OFF` | `OFF` | `OFF` |  |
+| `query_cache_size` | `0` | `0` |  |  |  |
+| `query_cache_type` | `OFF` | `OFF` |  |  |  |
 | `table_definition_cache` | `65536` | `65536` | `65536` | `65536` |  |
 | `table_open_cache` | `65536` | `65536` | `65536` | `65536` |  |
 | **Other** | | | | | |
-| `log_queries_not_using_indexes` | `OFF` | `OFF` | `OFF` | `OFF` |  |
-| `long_query_time` | `1` | `1` | `1` | `1` |  |
-| `min_examined_row_limit` | `1000` | `1000` | `1000` | `1000` |  |
-| `myisam_sort_buffer_size` | `128M` | `128M` | `128M` | `128M` |  |
-| `slow_query_log` | `ON` | `ON` | `ON` | `ON` |  |
-| `slow_query_log_file` | `/var/lib/mysql/slow.log` | `/var/lib/mysql/slow.log` | `/var/lib/mysql/slow.log` | `/var/lib/mysql/slow.log` |  |
+| `binlog_expire_logs_seconds` |  |  | `604800` | `604800` |  |
+| `innodb_adaptive_flushing` |  |  | `ON` | `ON` |  |
+| `innodb_adaptive_flushing_lwm` |  |  | `70` | `70` |  |
+| `innodb_redo_log_capacity` |  |  | `32G` | `32G` |  |
+| `log_queries_not_using_indexes` | `OFF` | `OFF` |  |  |  |
+| `long_query_time` | `1` | `1` |  |  |  |
+| `min_examined_row_limit` | `1000` | `1000` |  |  |  |
+| `myisam_sort_buffer_size` | `128M` | `128M` |  |  |  |
+| `mysqlx` |  |  | `OFF` | `OFF` |  |
+| `slow_query_log` | `ON` | `ON` |  |  |  |
+| `slow_query_log_file` | `/var/lib/mysql/slow.log` | `/var/lib/mysql/slow.log` |  |  |  |
 
 ---
 
