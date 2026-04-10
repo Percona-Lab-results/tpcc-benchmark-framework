@@ -283,6 +283,9 @@
   <p>
     All engines used the same base <code>my.cnf</code>.
     The only parameter that varies across runs is <code>innodb_buffer_pool_size</code>.
+    <code>innodb_buffer_pool_instances</code> is automatically scaled with the buffer pool:
+    <code>instances = buffer_pool_size_GB / 5</code> (minimum 1), so each instance manages
+    at least 5 GiB. For the 80G configuration shown below this gives 16 instances.
     <span style="color:#f97316;font-weight:600;">MariaDB-only</span> parameters are highlighted.
     Parameters that differ are marked <span style="color:#a78bfa;font-weight:600;">purple</span>.
   </p>
@@ -320,16 +323,6 @@
 <tr><td class="cfg-param">log_bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td><td>/var/lib/mysql/mysql-bin</td></tr>
 <tr><td class="cfg-param">max_binlog_size</td><td>512M</td><td>512M</td><td>512M</td><td>512M</td></tr>
 <tr><td class="cfg-param">sync_binlog</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
-<tr class="cfg-section"><td colspan="5">Cache / Misc</td></tr>
-<tr><td class="cfg-param">character_set_server</td><td>utf8mb4</td><td>utf8mb4</td><td>utf8mb4</td><td>utf8mb4</td></tr>
-<tr><td class="cfg-param">collation_server</td><td>utf8mb4_unicode_ci</td><td>utf8mb4_unicode_ci</td><td>utf8mb4_unicode_ci</td><td>utf8mb4_unicode_ci</td></tr>
-<tr><td class="cfg-param">key_buffer_size</td><td>64M</td><td>64M</td><td>64M</td><td>64M</td></tr>
-<tr><td class="cfg-param">max_allowed_packet</td><td>64M</td><td>64M</td><td>64M</td><td>64M</td></tr>
-<tr><td class="cfg-param">open_files_limit</td><td>1000000</td><td>1000000</td><td>1000000</td><td>1000000</td></tr>
-<tr><td class="cfg-param">query_cache_size</td><td>0</td><td>0</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
-<tr><td class="cfg-param">query_cache_type</td><td>OFF</td><td>OFF</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td></tr>
-<tr><td class="cfg-param">table_definition_cache</td><td>65536</td><td>65536</td><td>65536</td><td>65536</td></tr>
-<tr><td class="cfg-param">table_open_cache</td><td>65536</td><td>65536</td><td>65536</td><td>65536</td></tr>
 <tr class="cfg-section"><td colspan="5">Other</td></tr>
 <tr><td class="cfg-param">binlog_expire_logs_seconds</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>604800</td><td>604800</td></tr>
 <tr><td class="cfg-param">innodb_adaptive_flushing</td><td><span class="cfg-na">n/a</span></td><td><span class="cfg-na">n/a</span></td><td>ON</td><td>ON</td></tr>
@@ -357,7 +350,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-10 11:33
+  Report generated 2026-04-10 11:38
 </footer>
 
 </body>

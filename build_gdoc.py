@@ -473,6 +473,10 @@ _CFG_SKIP = {
     "sort_buffer_size","join_buffer_size","read_buffer_size",
     "read_rnd_buffer_size","tmp_table_size","max_heap_table_size",
     "bulk_insert_buffer_size",
+    "query_cache_type","query_cache_size","table_open_cache",
+    "table_definition_cache","open_files_limit",
+    "max_allowed_packet","key_buffer_size",
+    "character_set_server","collation_server",
 }
 
 SECTION_MAP = OrderedDict([
@@ -490,10 +494,6 @@ SECTION_MAP = OrderedDict([
     ("Binary Log",      {"log_bin","binlog_format","binlog_row_image",
                          "expire_logs_days","sync_binlog","binlog_cache_size",
                          "max_binlog_size"}),
-    ("Cache / Misc",    {"query_cache_type","query_cache_size","table_open_cache",
-                         "table_definition_cache","open_files_limit",
-                         "max_allowed_packet","key_buffer_size",
-                         "character_set_server","collation_server"}),
 ])
 
 
@@ -1193,6 +1193,9 @@ HTML = f"""<!DOCTYPE html>
   <p>
     All engines used the same base <code>my.cnf</code>.
     The only parameter that varies across runs is <code>innodb_buffer_pool_size</code>.
+    <code>innodb_buffer_pool_instances</code> is automatically scaled with the buffer pool:
+    <code>instances = buffer_pool_size_GB / 5</code> (minimum 1), so each instance manages
+    at least 5 GiB. For the 80G configuration shown below this gives 16 instances.
     <span style="color:#f97316;font-weight:600;">MariaDB-only</span> parameters are highlighted.
     Parameters that differ are marked <span style="color:#a78bfa;font-weight:600;">purple</span>.
   </p>
@@ -1429,6 +1432,11 @@ tail-latency violations.
 ---
 
 ## Database Configuration
+
+All engines used the same base `my.cnf`. The only parameter that varies across runs is
+`innodb_buffer_pool_size`. `innodb_buffer_pool_instances` is automatically scaled with the
+buffer pool: `instances = buffer_pool_size_GB / 5` (minimum 1), so each instance manages at
+least 5 GiB. For the 80G configuration shown below this gives 16 instances.
 
 {_md_cfg_table()}
 

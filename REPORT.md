@@ -234,6 +234,11 @@ tail-latency violations.
 
 ## Database Configuration
 
+All engines used the same base `my.cnf`. The only parameter that varies across runs is
+`innodb_buffer_pool_size`. `innodb_buffer_pool_instances` is automatically scaled with the
+buffer pool: `instances = buffer_pool_size_GB / 5` (minimum 1), so each instance manages at
+least 5 GiB. For the 80G configuration shown below this gives 16 instances.
+
 | Parameter | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 | Note |
 |-----------| --- | --- | --- | --- | ------ |
 | **InnoDB Buffer** | | | | | |
@@ -268,16 +273,6 @@ tail-latency violations.
 | `log_bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` | `/var/lib/mysql/mysql-bin` |  |
 | `max_binlog_size` | `512M` | `512M` | `512M` | `512M` |  |
 | `sync_binlog` | `1` | `1` | `1` | `1` |  |
-| **Cache / Misc** | | | | | |
-| `character_set_server` | `utf8mb4` | `utf8mb4` | `utf8mb4` | `utf8mb4` |  |
-| `collation_server` | `utf8mb4_unicode_ci` | `utf8mb4_unicode_ci` | `utf8mb4_unicode_ci` | `utf8mb4_unicode_ci` |  |
-| `key_buffer_size` | `64M` | `64M` | `64M` | `64M` |  |
-| `max_allowed_packet` | `64M` | `64M` | `64M` | `64M` |  |
-| `open_files_limit` | `1000000` | `1000000` | `1000000` | `1000000` |  |
-| `query_cache_size` | `0` | `0` |  |  |  |
-| `query_cache_type` | `OFF` | `OFF` |  |  |  |
-| `table_definition_cache` | `65536` | `65536` | `65536` | `65536` |  |
-| `table_open_cache` | `65536` | `65536` | `65536` | `65536` |  |
 | **Other** | | | | | |
 | `binlog_expire_logs_seconds` |  |  | `604800` | `604800` |  |
 | `innodb_adaptive_flushing` |  |  | `ON` | `ON` |  |
