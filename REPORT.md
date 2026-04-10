@@ -50,6 +50,16 @@ rather than single-thread performance.
 | 70G | **455,697** | 454,947 | 403,396 | 455,581 |
 | 80G | **465,174** | 451,869 | 404,778 | 459,969 |
 
+### Warmup Behaviour -- BP 80G
+
+The chart below shows per-second NOTPM for the full 3600-second run at 80G buffer pool,
+including the initial ramp-up and warmup phase. Thin lines are raw 1-second samples; thick
+lines are 60-second rolling averages. The first few minutes reveal how quickly each engine
+fills its buffer pool and reaches steady-state throughput. A faster warmup means the engine
+can serve production traffic sooner after a restart or failover.
+
+![Warmup timeseries BP 80G](report_assets/fig8_warmup_bp80.png)
+
 ---
 
 ## Virtual Users Iterations -- BP 50G, 1-128 VU

@@ -350,6 +350,63 @@ def make_timeseries_chart():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  FIGURE 3b — BP 80G warmup timeseries (full run, 1-sec resolution)
+# ══════════════════════════════════════════════════════════════════════════════
+def _full_timeseries(run: dict):
+    """Return (elapsed_min, notpm) for the entire run including ramp-up."""
+    rows = run["qps"]
+    if not rows:
+        return [], []
+    t0 = datetime.fromisoformat(rows[0]["timestamp"])
+    elapsed, notpm = [], []
+    for r in rows:
+        t = datetime.fromisoformat(r["timestamp"])
+        secs = (t - t0).total_seconds()
+        v = float(r["tps"])
+        if v > 0:
+            elapsed.append(secs / 60)
+            notpm.append(v * TPS_TO_NOTPM)
+    return elapsed, notpm
+
+
+def _best_bp80_run(eid):
+    """Best BP 80G sweep run for an engine."""
+    cands = [
+        r for r in bp_runs
+        if r["_eid"] == eid and "80G" in r["label"] and r["tps"].get("avg", 0) > 0
+    ]
+    return max(cands, key=lambda r: r["tps"]["avg"]) if cands else None
+
+
+bp80_runs = {eid: _best_bp80_run(eid) for eid in ENGINE_IDS}
+
+
+def make_warmup_chart():
+    fig, ax = plt.subplots(figsize=(11.5, 5.8))
+    for eid in ENGINE_IDS:
+        e = ENGINES[eid]
+        run = bp80_runs[eid]
+        if run is None:
+            continue
+        et, tps = _full_timeseries(run)
+        if not et:
+            continue
+        smooth = rolling_avg(tps, window=60)
+        ax.plot(et, [v/1000 for v in tps],   color=e["color"], lw=0.4, alpha=0.15)
+        ax.plot(et, [v/1000 for v in smooth], color=e["color"], lw=2.2, label=e["display"])
+
+    ax.set_xlabel("Elapsed time (minutes)")
+    ax.set_ylabel("NOTPM (thousands)")
+    ax.set_title("NOTPM Over Time \u2014 Buffer Pool 80G  [64 VU \u00b7 full run incl. warmup]")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
+    ax.legend(fontsize=9)
+    ax.set_ylim(bottom=0)
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
+    return fig_to_b64(fig, "fig8_warmup_bp80.png")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  FIGURE 4 — Scaling efficiency
 # ══════════════════════════════════════════════════════════════════════════════
 def make_scaling_chart():
@@ -793,6 +850,7 @@ img_ts         = make_timeseries_chart()
 img_scaling    = make_scaling_chart()
 img_jitter_bp  = make_jitter_bp_chart()
 img_jitter_vu  = make_jitter_vu_chart()
+img_warmup     = make_warmup_chart()
 print("Charts done.")
 
 
@@ -1069,6 +1127,17 @@ HTML = f"""<!DOCTYPE html>
   <img width="899" src="data:image/png;base64,{img_bp_line}" alt="BP iterations line chart">
   <div class="chart-caption">Figure 1 \u2014 Average NOTPM vs buffer pool size. Each point is the steady-state average (post-ramp-up).</div>
 
+  <h3>Warmup Behaviour \u2014 BP 80G</h3>
+  <p>
+    The chart below shows per-second NOTPM for the full 3600-second run at 80G buffer pool,
+    including the initial ramp-up and warmup phase. Thin lines are raw 1-second samples; thick
+    lines are 60-second rolling averages. The first few minutes reveal how quickly each engine
+    fills its buffer pool and reaches steady-state throughput. A faster warmup means the engine
+    can serve production traffic sooner after a restart or failover.
+  </p>
+  <img width="899" src="data:image/png;base64,{img_warmup}" alt="Warmup timeseries BP 80G">
+  <div class="chart-caption">Figure 1b \u2014 NOTPM over time at BP 80G \u00b7 64 VU. Full run including warmup. 1-second resolution.</div>
+
 
   <h2>Virtual Users Iterations  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G \u00b7 1 \u2013 128 VU</span></h2>
   <p>
@@ -1323,6 +1392,16 @@ rather than single-thread performance.
 ![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
 
 {_md_bp_table()}
+
+### Warmup Behaviour -- BP 80G
+
+The chart below shows per-second NOTPM for the full 3600-second run at 80G buffer pool,
+including the initial ramp-up and warmup phase. Thin lines are raw 1-second samples; thick
+lines are 60-second rolling averages. The first few minutes reveal how quickly each engine
+fills its buffer pool and reaches steady-state throughput. A faster warmup means the engine
+can serve production traffic sooner after a restart or failover.
+
+![Warmup timeseries BP 80G](report_assets/fig8_warmup_bp80.png)
 
 ---
 
