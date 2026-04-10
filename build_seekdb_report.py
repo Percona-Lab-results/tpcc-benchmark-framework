@@ -321,6 +321,42 @@ def make_timeseries_chart():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  FIGURE — SeekDB NOTPM scatter (BP 80G, 1-second dots)
+# ══════════════════════════════════════════════════════════════════════════════
+def make_seekdb_scatter():
+    run = ts_runs.get("seekdb")
+    if run is None:
+        return None
+    et, notpm = qps_timeseries(run)
+    if not et:
+        return None
+
+    e = ENGINES["seekdb"]
+    fig, ax = plt.subplots(figsize=(12, 5))
+    ax.scatter(et, [v / 1000 for v in notpm], s=2, color=e["color"], alpha=0.5, lw=0)
+
+    # rolling average overlay
+    smooth = rolling_avg(notpm, window=60)
+    ax.plot(et, [v / 1000 for v in smooth], color="#ffffff", lw=2, alpha=0.8,
+            label="60 s rolling avg")
+
+    # mean line
+    avg = np.mean(notpm) / 1000
+    ax.axhline(avg, color=e["color"], ls="--", lw=1.2, alpha=0.6,
+               label=f"Mean: {avg:.1f}k")
+
+    ax.set_xlabel("Elapsed time (minutes)")
+    ax.set_ylabel("NOTPM (thousands)")
+    ax.set_title(f"SeekDB NOTPM Variance \u2014 Buffer Pool 80G  [64 VU \u00b7 3600 s]")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
+    ax.legend(fontsize=9)
+    ax.set_ylim(bottom=0)
+    _clean_axes(ax)
+    fig.tight_layout(pad=1.5)
+    return fig_to_b64(fig, "fig_seekdb_scatter.png")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  FIGURE 4 — Scaling efficiency
 # ══════════════════════════════════════════════════════════════════════════════
 def make_scaling_chart():
@@ -728,10 +764,11 @@ def _md_jitter_table(rows):
 #  RENDER HTML
 # ══════════════════════════════════════════════════════════════════════════════
 print("Generating charts...")
-img_bp_line    = make_bp_chart()
-img_bp_bar     = make_bp_bar_chart()
-img_ts         = make_timeseries_chart()
-img_jitter_bp  = make_jitter_bp_chart()
+img_bp_line       = make_bp_chart()
+img_bp_bar        = make_bp_bar_chart()
+img_ts            = make_timeseries_chart()
+img_seekdb_scatter = make_seekdb_scatter()
+img_jitter_bp     = make_jitter_bp_chart()
 print("Charts done.")
 
 
@@ -959,13 +996,25 @@ HTML = f"""<!DOCTYPE html>
 </section>
 
 <section>
+  <h2>SeekDB NOTPM Variance  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 80G \u00b7 64 VU \u00b7 1-second samples</span></h2>
+  <p>
+    Each dot below represents a single 1-second NOTPM measurement from the SeekDB BP 80G run.
+    The scatter reveals the full per-second variance that rolling averages smooth out in the
+    stability chart above. The white line is a 60-second rolling average; the dashed line is the
+    overall mean.
+  </p>
+  {"<div class='chart'><img src=" + '"data:image/png;base64,' + img_seekdb_scatter + '"' + " alt='SeekDB scatter'></div>" if img_seekdb_scatter else "<p><em>No SeekDB BP 80G data available.</em></p>"}
+  <div class="chart-caption">Figure 4 \u2014 SeekDB per-second NOTPM scatter. BP 80G \u00b7 64 VU. Each dot = 1 second.</div>
+</section>
+
+<section>
   <h2>NOTPM Jitter  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP sweep \u00b7 last 30 min</span></h2>
   <p>
     Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
     <strong>CV%</strong> (Coefficient of Variation = std / mean \u00d7 100): lower is more stable.
   </p>
   <div class="chart"><img src="data:image/png;base64,{img_jitter_bp}" alt="BP jitter"></div>
-  <div class="chart-caption">Figure 4 \u2014 NOTPM distribution per buffer pool size (last 30 min).</div>
+  <div class="chart-caption">Figure 5 \u2014 NOTPM distribution per buffer pool size (last 30 min).</div>
   {_html_jitter_table(bp_jitter_rows)}
 </section>
 
@@ -1079,6 +1128,16 @@ The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot d
 Per-second NOTPM for the best BP 80G run from each engine (thick line = 60-sample rolling average).
 
 ![NOTPM Over Time](report_assets/fig3_timeseries.png)
+
+---
+
+## SeekDB NOTPM Variance -- BP 80G, 64 VU
+
+Each dot represents a single 1-second NOTPM measurement from the SeekDB BP 80G run. The scatter
+reveals the full per-second variance that rolling averages smooth out. The white line is a
+60-second rolling average; the dashed line is the overall mean.
+
+![SeekDB NOTPM Scatter](report_assets/fig_seekdb_scatter.png)
 
 ---
 

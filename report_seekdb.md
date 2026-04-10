@@ -45,6 +45,16 @@ Per-second NOTPM for the best BP 80G run from each engine (thick line = 60-sampl
 
 ---
 
+## SeekDB NOTPM Variance -- BP 80G, 64 VU
+
+Each dot represents a single 1-second NOTPM measurement from the SeekDB BP 80G run. The scatter
+reveals the full per-second variance that rolling averages smooth out. The white line is a
+60-second rolling average; the dashed line is the overall mean.
+
+![SeekDB NOTPM Scatter](report_assets/fig_seekdb_scatter.png)
+
+---
+
 ## NOTPM Jitter -- BP sweep, last 30 min
 
 Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
