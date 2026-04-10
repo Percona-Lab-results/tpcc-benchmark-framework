@@ -7,16 +7,6 @@
 
 ---
 
-## Executive Summary
-
-| Metric | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 |
-|--------| --- | --- | --- | --- |
-| Peak NOTPM (BP 80G, 64 VU) | 465,174 | 454,947 | 404,778 | 459,969 |
-| Peak NOTPM (BP 50G, 128 VU) | 244,031 | 251,980 | 323,106 | 376,139 |
-| Scaling 1->128 VU (BP 50G) | 19x | 20x | 29x | 28x |
-
----
-
 ## Buffer Pool Iterations -- 64 VU, 10G-80G
 
 The **InnoDB Buffer Pool** is the main memory area where InnoDB caches table data and index

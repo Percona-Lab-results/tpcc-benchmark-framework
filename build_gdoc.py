@@ -1357,12 +1357,6 @@ REPORT_MD = f"""# Database Benchmark Comparison -- TPROC-C Report
 
 ---
 
-## Executive Summary
-
-{_md_exec_summary()}
-
----
-
 ## Buffer Pool Iterations -- 64 VU, 10G-80G
 
 The **InnoDB Buffer Pool** is the main memory area where InnoDB caches table data and index
