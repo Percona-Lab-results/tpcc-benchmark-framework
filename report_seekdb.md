@@ -51,6 +51,13 @@ Each dot represents a single 1-second NOTPM measurement from the SeekDB BP 80G r
 reveals the full per-second variance that rolling averages smooth out. The white line is a
 60-second rolling average; the dashed line is the overall mean.
 
+**Periodic drops to near-zero** are clearly visible at roughly 60-second intervals throughout
+the run. During these drops, throughput collapses for 1-3 seconds before recovering. This
+pattern is consistent with SeekDB's (OceanBase) internal compaction or minor freeze cycles,
+which periodically stall foreground transactions. Over the steady-state portion, approximately
+**53 distinct drop events** were observed with a **median interval of ~60 seconds**. These
+periodic stalls are the primary driver of SeekDB's high CV% (48-85%) in the jitter analysis.
+
 ![SeekDB NOTPM Scatter](report_assets/fig_seekdb_scatter.png)
 
 ---
@@ -89,11 +96,11 @@ Each box shows the distribution of per-second NOTPM samples during the final 30 
 - **Workload:** 1000 warehouses (~100 GB), 60 s ramp-up, 3600 s measurement window
 - **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
 - **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
-- **Engines:** MySQL 9.7.0-er2, SeekDB v1.2 (OceanBase seekdb-v1.2.0.0)
+- **MySQL 9.7.0-er2:** Installed natively on the host, connected via localhost:3306. Same `my.cnf` as all other MySQL/MariaDB runs.
+- **SeekDB v1.2.0.0:** Run inside Docker (`oceanbase/seekdb:1.2.0.0`) on the same host. Container: `MEMORY_LIMIT=32G`, `LOG_DISK_SIZE=32G`, `CPU_COUNT=0` (all CPUs), `DATAFILE_MAXSIZE=512G`. Connected via localhost:2881. MySQL-compatible wire protocol.
 - **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPROC-C new-order mix is 45%)
-- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps
-- **Note:** SeekDB NOTPM data sourced from HammerDB's native nopm_samples.csv (per-second TPM
-  from the benchmark driver) since the external monitoring script could not read SeekDB's status variables.
+- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps. MySQL: `innodb_buffer_pool_size` varied per step. SeekDB: `MEMORY_LIMIT=32G` fixed (OceanBase manages memory internally).
+- **Data collection:** SeekDB NOTPM sourced from HammerDB's native `nopm_samples.csv` (per-second TPM from benchmark driver) since `SHOW GLOBAL STATUS` returned zeros for SeekDB's commit/rollback counters. MySQL data collected from both sources and cross-validated.
 
 ---
 
