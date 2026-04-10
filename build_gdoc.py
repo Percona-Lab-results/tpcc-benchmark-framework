@@ -1175,12 +1175,6 @@ HTML = f"""<!DOCTYPE html>
     multiplier, not that it scales worse in absolute terms.
   </p>
 
-  <h3>Virtual Users Iterations \u2014 Data Table</h3>
-  <table class="data-table">
-    <thead><tr><th>VU</th>{engine_th()}</tr></thead>
-    <tbody>{vu_html_rows()}</tbody>
-  </table>
-
 
   <h2>NOTPM Stability  <span style="font-weight:400;color:#3d5070;font-size:0.8rem">BP 50G \u00b7 64 VU \u00b7 full run</span></h2>
   <p>
