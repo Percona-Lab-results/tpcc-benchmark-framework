@@ -692,19 +692,48 @@ def make_jitter_bp_chart():
 
 
 def make_jitter_vu_chart():
+    """Normalized VU jitter: each engine's values at each VU are shown as % of that group's mean."""
     vus = all_vus
     fig, ax = plt.subplots(figsize=(11.5, 6.5))
-    _boxplot_group(ax, vus, vu_jitter)
+
+    n = len(ENGINE_IDS)
+    w_total = 0.7
+    w = w_total / n
+    for i, eid in enumerate(ENGINE_IDS):
+        col = ENGINES[eid]["color"]
+        offset = (i - n/2 + 0.5) * w
+        for j, key in enumerate(vus):
+            vals = vu_jitter[eid].get(key, [])
+            if not vals:
+                continue
+            mean = np.mean(vals)
+            if mean == 0:
+                continue
+            normed = [v / mean * 100 for v in vals]
+            ax.boxplot(
+                normed,
+                positions=[j + offset],
+                widths=w * 0.85,
+                patch_artist=True,
+                notch=False,
+                showfliers=False,
+                medianprops=dict(color="#333333", lw=2),
+                boxprops=dict(facecolor=col + "30", alpha=1, linewidth=1.3, edgecolor=col),
+                whiskerprops=dict(color=col, lw=1.2, alpha=0.8, linestyle=(0, (4, 3))),
+                capprops=dict(color=col, lw=1.6),
+                manage_ticks=False,
+            )
+
+    ax.axhline(y=100, color=C_DIM, lw=1.2, ls="--", alpha=0.5, zorder=1)
     ax.set_xticks(range(len(vus)))
     ax.set_xticklabels([str(v) for v in vus])
     ax.set_xlabel("Virtual Users")
-    ax.set_ylabel("NOTPM (thousands) \u2014 last 30 min")
-    ax.set_title("NOTPM Jitter \u2014 VU Iterations  [BP 50G \u00b7 last 30 min of each run]")
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}k"))
+    ax.set_ylabel("NOTPM as % of mean \u2014 last 30 min")
+    ax.set_title("Normalized NOTPM Jitter \u2014 VU Iterations  [BP 50G \u00b7 last 30 min]")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}%"))
     handles = [mpatches.Patch(color=ENGINES[eid]["color"], label=ENGINES[eid]["display"])
                for eid in ENGINE_IDS]
-    ax.legend(handles=handles, loc="upper left", fontsize=9)
-    ax.set_ylim(bottom=0)
+    ax.legend(handles=handles, loc="lower left", fontsize=9)
     _clean_axes(ax)
     fig.tight_layout(pad=1.5)
     return fig_to_b64(fig, "fig7_jitter_vu.png")
