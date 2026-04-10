@@ -1035,15 +1035,16 @@ HTML = f"""<!DOCTYPE html>
   <p><strong>MySQL 9.7.0-er2:</strong> Installed natively on the host. Connected via localhost:3306.
   Configuration: same <code>my.cnf</code> as all other MySQL/MariaDB runs in this benchmark suite.</p>
   <p><strong>SeekDB v1.2.0.0:</strong> Run inside a Docker container (<code>oceanbase/seekdb:1.2.0.0</code>)
-  on the same host. Container settings: <code>MEMORY_LIMIT=32G</code>, <code>LOG_DISK_SIZE=32G</code>,
-  <code>CPU_COUNT=0</code> (all CPUs), <code>DATAFILE_MAXSIZE=512G</code>. Connected via localhost:2881.
-  SeekDB is based on OceanBase and presents a MySQL-compatible wire protocol, allowing HammerDB
-  to connect using the standard MySQL driver.</p>
+  on the same host. Container settings: <code>MEMORY_LIMIT</code> varied per sweep step (10G\u201380G),
+  <code>LOG_DISK_SIZE=32G</code>, <code>CPU_COUNT=0</code> (all CPUs),
+  <code>DATAFILE_MAXSIZE=512G</code>. Container was restarted for each step.
+  Connected via localhost:2881. SeekDB is based on OceanBase and presents a MySQL-compatible
+  wire protocol, allowing HammerDB to connect using the standard MySQL driver.</p>
   <p><strong>Metric:</strong> NOTPM = commits/s \u00d7 60 \u00d7 0.45.</p>
   <p><strong>Buffer pool sweep:</strong> 64 VU, 10\u201380 GiB in 10 GiB steps. For MySQL, the
-  <code>innodb_buffer_pool_size</code> parameter was varied directly. For SeekDB, the
-  <code>MEMORY_LIMIT</code> Docker parameter was kept at 32G for all runs (OceanBase manages
-  its own memory allocation internally).</p>
+  <code>innodb_buffer_pool_size</code> parameter was varied directly. For SeekDB, the Docker
+  <code>MEMORY_LIMIT</code> parameter was varied per step (10G\u201380G), controlling OceanBase\u2019s
+  total memory allocation. The container was restarted for each step.</p>
   <p><strong>Data collection:</strong> SeekDB NOTPM data was sourced from HammerDB\u2019s native
   <code>nopm_samples.csv</code> (per-second TPM from the benchmark driver) since the external
   monitoring script\u2019s <code>SHOW GLOBAL STATUS</code> queries returned zeros for SeekDB\u2019s
@@ -1184,9 +1185,9 @@ Each box shows the distribution of per-second NOTPM samples during the final 30 
 - **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
 - **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
 - **MySQL 9.7.0-er2:** Installed natively on the host, connected via localhost:3306. Same `my.cnf` as all other MySQL/MariaDB runs.
-- **SeekDB v1.2.0.0:** Run inside Docker (`oceanbase/seekdb:1.2.0.0`) on the same host. Container: `MEMORY_LIMIT=32G`, `LOG_DISK_SIZE=32G`, `CPU_COUNT=0` (all CPUs), `DATAFILE_MAXSIZE=512G`. Connected via localhost:2881. MySQL-compatible wire protocol.
+- **SeekDB v1.2.0.0:** Run inside Docker (`oceanbase/seekdb:1.2.0.0`) on the same host. Container: `MEMORY_LIMIT` varied per sweep step (10G-80G), `LOG_DISK_SIZE=32G`, `CPU_COUNT=0` (all CPUs), `DATAFILE_MAXSIZE=512G`. Container restarted each step. Connected via localhost:2881. MySQL-compatible wire protocol.
 - **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPROC-C new-order mix is 45%)
-- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps. MySQL: `innodb_buffer_pool_size` varied per step. SeekDB: `MEMORY_LIMIT=32G` fixed (OceanBase manages memory internally).
+- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps. MySQL: `innodb_buffer_pool_size` varied per step. SeekDB: Docker `MEMORY_LIMIT` varied per step (10G-80G), container restarted each time.
 - **Data collection:** SeekDB NOTPM sourced from HammerDB's native `nopm_samples.csv` (per-second TPM from benchmark driver) since `SHOW GLOBAL STATUS` returned zeros for SeekDB's commit/rollback counters. MySQL data collected from both sources and cross-validated.
 
 ---

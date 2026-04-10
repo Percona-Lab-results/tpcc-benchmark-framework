@@ -158,15 +158,16 @@
   <p><strong>MySQL 9.7.0-er2:</strong> Installed natively on the host. Connected via localhost:3306.
   Configuration: same <code>my.cnf</code> as all other MySQL/MariaDB runs in this benchmark suite.</p>
   <p><strong>SeekDB v1.2.0.0:</strong> Run inside a Docker container (<code>oceanbase/seekdb:1.2.0.0</code>)
-  on the same host. Container settings: <code>MEMORY_LIMIT=32G</code>, <code>LOG_DISK_SIZE=32G</code>,
-  <code>CPU_COUNT=0</code> (all CPUs), <code>DATAFILE_MAXSIZE=512G</code>. Connected via localhost:2881.
-  SeekDB is based on OceanBase and presents a MySQL-compatible wire protocol, allowing HammerDB
-  to connect using the standard MySQL driver.</p>
+  on the same host. Container settings: <code>MEMORY_LIMIT</code> varied per sweep step (10G–80G),
+  <code>LOG_DISK_SIZE=32G</code>, <code>CPU_COUNT=0</code> (all CPUs),
+  <code>DATAFILE_MAXSIZE=512G</code>. Container was restarted for each step.
+  Connected via localhost:2881. SeekDB is based on OceanBase and presents a MySQL-compatible
+  wire protocol, allowing HammerDB to connect using the standard MySQL driver.</p>
   <p><strong>Metric:</strong> NOTPM = commits/s × 60 × 0.45.</p>
   <p><strong>Buffer pool sweep:</strong> 64 VU, 10–80 GiB in 10 GiB steps. For MySQL, the
-  <code>innodb_buffer_pool_size</code> parameter was varied directly. For SeekDB, the
-  <code>MEMORY_LIMIT</code> Docker parameter was kept at 32G for all runs (OceanBase manages
-  its own memory allocation internally).</p>
+  <code>innodb_buffer_pool_size</code> parameter was varied directly. For SeekDB, the Docker
+  <code>MEMORY_LIMIT</code> parameter was varied per step (10G–80G), controlling OceanBase’s
+  total memory allocation. The container was restarted for each step.</p>
   <p><strong>Data collection:</strong> SeekDB NOTPM data was sourced from HammerDB’s native
   <code>nopm_samples.csv</code> (per-second TPM from the benchmark driver) since the external
   monitoring script’s <code>SHOW GLOBAL STATUS</code> queries returned zeros for SeekDB’s
@@ -175,7 +176,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-10 06:47
+  Report generated 2026-04-10 06:49
 </footer>
 
 </div>
