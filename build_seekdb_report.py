@@ -997,3 +997,121 @@ out = "report_seekdb.html"
 with open(out, "w", encoding="utf-8") as f:
     f.write(HTML)
 print(f"Report written -> {out}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MARKDOWN REPORT
+# ══════════════════════════════════════════════════════════════════════════════
+def md_engine_header():
+    return " | ".join(ENGINES[eid]["display"] for eid in ENGINE_IDS)
+
+def md_engine_sep():
+    return "|".join("---" for _ in ENGINE_IDS)
+
+def md_bp_table():
+    rows = [f"| BP Size | {md_engine_header()} | \u0394 (MySQL vs SeekDB) |",
+            f"|---------|{md_engine_sep()}|---|"]
+    for row in bp_table_rows:
+        vals = [row[eid] for eid in ENGINE_IDS]
+        max_v = max(vals) if any(v > 0 for v in vals) else 0
+        cells = []
+        for eid in ENGINE_IDS:
+            v = row[eid]
+            cells.append(f"**{v:,}**" if v == max_v and v > 0 else (f"{v:,}" if v > 0 else "\u2014"))
+        v0, v1 = vals[0], vals[1]
+        delta = pct_diff(v0, v1) if v0 > 0 and v1 > 0 else "\u2014"
+        rows.append(f"| {row['size']} | {' | '.join(cells)} | {delta} |")
+    return "\n".join(rows)
+
+
+def _md_jitter_table(rows):
+    lines = [
+        "| Config | Engine | Mean NOTPM | Std Dev | CV% | P5 | P95 | P5-P95 Range |",
+        "|--------|--------|-----------|---------|-----|-----|-----|-------------|",
+    ]
+    for r in rows:
+        e = ENGINES[r["eid"]]
+        lines.append(
+            f'| {r["config"]} | {e["display"]} | {int(r["mean"]):,} | {int(r["std"]):,}'
+            f' | {r["cv"]:.1f}% | {int(r["p5"]):,} | {int(r["p95"]):,}'
+            f' | {int(r["p95"]-r["p5"]):,} |'
+        )
+    return "\n".join(lines)
+
+
+def build_md():
+    best = max(ENGINE_IDS, key=lambda e: kpi_peak_bp[e])
+    second = sorted(ENGINE_IDS, key=lambda e: kpi_peak_bp[e], reverse=True)[1]
+    adv = (kpi_peak_bp[best] / kpi_peak_bp[second] - 1) * 100
+
+    return f"""# MySQL 9.7 vs SeekDB -- TPROC-C Benchmark Report
+
+**HammerDB 4.12 | TPROC-C | 1000 warehouses | 3600 s runs | 60 s ramp-up**
+**Hardware:** Intel Xeon Gold 6230 (2x20c, HT = 80 logical CPUs) | 187 GiB RAM | NVMe 2.9 TB
+**OS:** Ubuntu 24.04 | kernel 6.8.0-60-generic | Generated: {datetime.now().strftime("%Y-%m-%d")}
+**Engines:** MySQL 9.7.0-er2, SeekDB v1.2 (OceanBase-based)
+
+---
+
+## Key Findings
+
+**{ENGINES[best]["display"]}** leads at all buffer pool sizes, with a **+{adv:.0f}%** advantage
+at 80G BP where the working set fits mostly in memory. Both engines show strong throughput
+scaling as buffer pool increases from 10G to 80G.
+
+---
+
+## Buffer Pool Sweep -- 64 VU, 10G-80G
+
+Both engines ran TPROC-C with 64 virtual users and buffer pool varied from 10 to 80 GiB.
+The dataset is 1000 warehouses (~100 GB), so an 80 GiB pool covers ~80% of hot data.
+
+![TPROC-C Throughput vs Buffer Pool Size](report_assets/fig1_bp_line.png)
+
+![TPROC-C Throughput -- bar chart](report_assets/fig5_bp_bar.png)
+
+{md_bp_table()}
+
+---
+
+## NOTPM Stability -- BP 80G, 64 VU
+
+Per-second NOTPM for the best BP 80G run from each engine (thick line = 60-sample rolling average).
+
+![NOTPM Over Time](report_assets/fig3_timeseries.png)
+
+---
+
+## NOTPM Jitter -- BP sweep, last 30 min
+
+Each box shows the distribution of per-second NOTPM samples during the final 30 minutes.
+**CV%** (Coefficient of Variation = std / mean x 100): lower is more stable.
+
+![NOTPM Jitter -- BP Sweep](report_assets/fig6_jitter_bp.png)
+
+{_md_jitter_table(bp_jitter_rows)}
+
+---
+
+## Methodology
+
+- **Benchmark:** TPROC-C via HammerDB 4.12 (`tpcc_run.tcl`)
+- **Workload:** 1000 warehouses (~100 GB), 60 s ramp-up, 3600 s measurement window
+- **Hardware:** Intel Xeon Gold 6230 (2x20 cores, HT = 80 logical CPUs), 187 GiB DDR4, NVMe SSD (2.9 TB)
+- **OS:** Ubuntu 24.04, kernel 6.8.0-60-generic
+- **Engines:** MySQL 9.7.0-er2, SeekDB v1.2 (OceanBase seekdb-v1.2.0.0)
+- **Metric:** NOTPM = per-second commit rate x 60 x 0.45 (TPROC-C new-order mix is 45%)
+- **BP sweep:** 64 VU, buffer pool 10-80 GiB in 10 GiB steps
+- **Note:** SeekDB NOTPM data sourced from HammerDB's native nopm_samples.csv (per-second TPM
+  from the benchmark driver) since the external monitoring script could not read SeekDB's status variables.
+
+---
+
+*Data source: [Percona-Lab-results/tpcc-benchmark-framework](https://github.com/Percona-Lab-results/tpcc-benchmark-framework)*
+"""
+
+
+md_out = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "report_seekdb.md")
+with open(md_out, "w", encoding="utf-8") as f:
+    f.write(build_md())
+print(f"Markdown report written -> {md_out}")
