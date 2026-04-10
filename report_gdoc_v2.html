@@ -281,19 +281,34 @@
   <p>
     All engines used the same base <code>my.cnf</code>.
     The only parameter that varies across runs is <code>innodb_buffer_pool_size</code>.
-    <code>innodb_buffer_pool_instances</code> is automatically scaled with the buffer pool:
-    <code>instances = buffer_pool_size_GB / 5</code> (minimum 1), so each instance manages
-    at least 5 GiB. For the 80G configuration shown below this gives 16 instances.
-    This applies to MySQL only — MariaDB supports only a single buffer pool instance.
-    The InnoDB redo log is set to 32 GiB — deliberately oversized so that log capacity
-    is never a bottleneck and no engine is limited by checkpoint pressure from log space exhaustion.
-    <code>innodb_io_capacity</code> is set to 10,000 to fully utilise the NVMe storage and avoid
-    I/O throttling during background flushing.
-    Direct I/O (<code>innodb_use_native_aio = ON</code>) bypasses the operating system page cache,
-    allowing the database engine to manage its own memory via the buffer pool without double-caching.
-    Binary logging is configured for full safety: <code>sync_binlog = 1</code> ensures every
-    transaction is fsynced to the binlog before commit, and <code>innodb_flush_log_at_trx_commit = 1</code>
-    flushes the redo log on each commit — the most durable setting at the cost of some throughput.
+  </p>
+  <p>
+    <strong>Buffer pool instances.</strong>
+    <code>innodb_buffer_pool_instances</code> is automatically scaled:
+    <code>instances = buffer_pool_GB / 5</code> (minimum 1),
+    giving 16 instances at 80G. This applies to MySQL only — MariaDB uses a single
+    buffer pool instance.
+  </p>
+  <p>
+    <strong>I/O and storage.</strong>
+    <code>innodb_io_capacity</code> is set to 10,000 to fully utilise NVMe storage and
+    avoid I/O throttling during background flushing. Direct I/O bypasses the operating
+    system page cache, allowing each engine to manage its own memory through the buffer
+    pool without double-caching.
+  </p>
+  <p>
+    <strong>Redo log.</strong>
+    The InnoDB redo log is set to 32 GiB — deliberately oversized so that log
+    capacity is never a bottleneck and no engine is limited by checkpoint pressure.
+  </p>
+  <p>
+    <strong>Durability.</strong>
+    Binary logging is configured for full safety:
+    <code>sync_binlog = 1</code> fsyncs every transaction to the binlog before
+    commit, and <code>innodb_flush_log_at_trx_commit = 1</code> flushes the redo
+    log on each commit — the most durable setting at the cost of some throughput.
+  </p>
+  <p>
     <span style="color:#f97316;font-weight:600;">MariaDB-only</span> parameters are highlighted.
     Parameters that differ are marked <span style="color:#a78bfa;font-weight:600;">purple</span>.
   </p>
@@ -358,7 +373,7 @@
 
 <footer>
   Data source: <a href="https://github.com/Percona-Lab-results/tpcc-benchmark-framework">Percona-Lab-results/tpcc-benchmark-framework</a> ·
-  Report generated 2026-04-10 13:27
+  Report generated 2026-04-10 13:29
 </footer>
 
 </body>

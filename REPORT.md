@@ -235,18 +235,23 @@ tail-latency violations.
 ## Database Configuration
 
 All engines used the same base `my.cnf`. The only parameter that varies across runs is
-`innodb_buffer_pool_size`. `innodb_buffer_pool_instances` is automatically scaled with the
-buffer pool: `instances = buffer_pool_size_GB / 5` (minimum 1), so each instance manages at
-least 5 GiB. For the 80G configuration shown below this gives 16 instances.
-This applies to MySQL only -- MariaDB supports only a single buffer pool instance.
-The InnoDB redo log is set to 32 GiB -- deliberately oversized so that log capacity is never
-a bottleneck and no engine is limited by checkpoint pressure from log space exhaustion.
-`innodb_io_capacity` is set to 10,000 to fully utilise the NVMe storage and avoid I/O throttling
-during background flushing. Direct I/O (`innodb_use_native_aio = ON`) bypasses the operating
-system page cache, allowing the database engine to manage its own memory via the buffer pool
-without double-caching. Binary logging is configured for full safety: `sync_binlog = 1` ensures
-every transaction is fsynced to the binlog before commit, and `innodb_flush_log_at_trx_commit = 1`
-flushes the redo log on each commit -- the most durable setting at the cost of some throughput.
+`innodb_buffer_pool_size`.
+
+**Buffer pool instances.** `innodb_buffer_pool_instances` is automatically scaled:
+`instances = buffer_pool_GB / 5` (minimum 1), giving 16 instances at 80G. This applies to
+MySQL only -- MariaDB uses a single buffer pool instance.
+
+**I/O and storage.** `innodb_io_capacity` is set to 10,000 to fully utilise NVMe storage and
+avoid I/O throttling during background flushing. Direct I/O bypasses the operating system page
+cache, allowing each engine to manage its own memory through the buffer pool without
+double-caching.
+
+**Redo log.** The InnoDB redo log is set to 32 GiB -- deliberately oversized so that log
+capacity is never a bottleneck and no engine is limited by checkpoint pressure.
+
+**Durability.** Binary logging is configured for full safety: `sync_binlog = 1` fsyncs every
+transaction to the binlog before commit, and `innodb_flush_log_at_trx_commit = 1` flushes the
+redo log on each commit -- the most durable setting at the cost of some throughput.
 
 | Parameter | MariaDB 12.2.2 | MariaDB 12.3.1 | MySQL 8.4.8 | MySQL 9.7.0 | Note |
 |-----------| --- | --- | --- | --- | ------ |
