@@ -1175,7 +1175,16 @@ HTML = f"""<!DOCTYPE html>
 
   <h3 style="margin-top:28px;">Virtual Users Iterations</h3>
   <img width="899" src="data:image/png;base64,{img_jitter_vu}" alt="VU jitter">
-  <div class="chart-caption">Figure 7 \u2014 NOTPM distribution per VU count (last 30 min).</div>
+  <div class="chart-caption">Figure 7 \u2014 Normalized NOTPM jitter per VU count (last 30 min). 100% = mean NOTPM for that engine at that VU level.</div>
+  <p>
+    This chart uses <strong>normalized jitter</strong>: each engine\u2019s per-second NOTPM values
+    are divided by that engine\u2019s mean at the given VU count and expressed as a percentage,
+    so 100% represents the average. This removes absolute throughput differences between engines
+    and isolates how <em>consistently</em> each one sustains its own average. A narrow box around
+    100% means stable throughput; a wide box means the engine oscillates significantly above and
+    below its mean. This makes jitter directly comparable across engines that have very different
+    absolute NOTPM levels.
+  </p>
   <p>
     Jitter increases with concurrency for all engines, but the divergence is striking: at
     64\u2013128 VU, both MariaDB versions reach CV 24\u201326%, while MySQL 8.4 stays at
@@ -1408,6 +1417,12 @@ all buffer pool sizes.
 ### Virtual Users Iterations
 
 ![NOTPM Jitter -- VU Iterations](report_assets/fig7_jitter_vu.png)
+
+This chart uses **normalized jitter**: each engine's per-second NOTPM values are divided by that
+engine's mean at the given VU count and expressed as a percentage, so 100% represents the average.
+This removes absolute throughput differences between engines and isolates how *consistently* each
+one sustains its own average. A narrow box around 100% means stable throughput; a wide box means
+the engine oscillates significantly above and below its mean.
 
 Jitter increases with concurrency for all engines, but the divergence is striking: at 64-128 VU,
 both MariaDB versions reach CV 24-26%, while MySQL 8.4 stays at 8-10% and MySQL 9.7 at 10-11%.

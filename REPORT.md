@@ -181,6 +181,12 @@ all buffer pool sizes.
 
 ![NOTPM Jitter -- VU Iterations](report_assets/fig7_jitter_vu.png)
 
+This chart uses **normalized jitter**: each engine's per-second NOTPM values are divided by that
+engine's mean at the given VU count and expressed as a percentage, so 100% represents the average.
+This removes absolute throughput differences between engines and isolates how *consistently* each
+one sustains its own average. A narrow box around 100% means stable throughput; a wide box means
+the engine oscillates significantly above and below its mean.
+
 Jitter increases with concurrency for all engines, but the divergence is striking: at 64-128 VU,
 both MariaDB versions reach CV 24-26%, while MySQL 8.4 stays at 8-10% and MySQL 9.7 at 10-11%.
 At low concurrency (1-8 VU), all engines are tightly clustered below CV 7%, indicating the gap
