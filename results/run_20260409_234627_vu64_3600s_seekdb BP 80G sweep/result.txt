@@ -1,0 +1,1 @@
+  Elapsed: 06:57 / 61:30Vuser 1:TEST RESULT : System achieved 127634 NOPM from 0 MariaDB TPM

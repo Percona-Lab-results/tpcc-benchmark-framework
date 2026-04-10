@@ -25,7 +25,7 @@ if [[ -n "${1:-}" ]]; then
     CONTAINER="$1"
 else
     # Find containers (running or stopped) with mysql/mariadb image
-    MATCHES=$(docker ps -a --format '{{.Names}} {{.Image}}' | grep -iE 'mysql|maria|percona' || true)
+    MATCHES=$(docker ps -a --format '{{.Names}} {{.Image}}' | grep -iE 'mysql|maria|percona|seekdb|oceanbase' || true)
     NUM=$(echo "$MATCHES" | grep -c . || true)
 
     if [[ "$NUM" -eq 0 ]]; then

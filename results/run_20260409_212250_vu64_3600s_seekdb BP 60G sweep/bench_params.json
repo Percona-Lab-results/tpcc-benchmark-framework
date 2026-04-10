@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-04-09T21:22:50+00:00",
+  "hammerdb_version": "4.12",
+  "mariadb_host": "127.0.0.1",
+  "mariadb_port": "2881",
+  "database": "tpcc",
+  "warehouses": 1000,
+  "virtual_users": 64,
+  "rampup_seconds": 60,
+  "duration_seconds": 3600,
+  "rampup_minutes": 1,
+  "duration_minutes": 60,
+  "label": "seekdb BP 60G sweep"
+}

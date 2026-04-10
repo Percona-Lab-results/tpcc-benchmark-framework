@@ -21,10 +21,10 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Sweep innodb_buffer_pool_size and run benchmarks.
+Sweep innodb_buffer_pool_size (or MEMORY_LIMIT for SeekDB) and run benchmarks.
 
 Options:
-  --db DB          mariadb, mysql, or percona (default: ${DB})
+  --db DB          mariadb, mysql, percona, mysql97, mariadb123, or seekdb (default: ${DB})
   --start SIZE     Starting BP in GB (default: ${BP_START})
   --end SIZE       Ending BP in GB (default: ${BP_END})
   --step SIZE      Step in GB (default: ${BP_STEP})
@@ -51,6 +51,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Resolve DB-specific paths
+SEEKDB_MODE=false
 case "$DB" in
     mariadb)
         CNF="${SCRIPT_DIR}/mariadb.cnf"
@@ -77,46 +78,67 @@ case "$DB" in
         START="${SCRIPT_DIR}/start_mariadb123.sh"
         CONTAINER="mariadb123"
         ;;
-    *) die "Unknown DB: ${DB}. Use mariadb, mysql, percona, mysql97, or mariadb123." ;;
+    seekdb)
+        CNF=""
+        START="${SCRIPT_DIR}/start_seekdb.sh"
+        CONTAINER="seekdb"
+        SEEKDB_MODE=true
+        export DB_PORT=2881 DB_PASS=password
+        ;;
+    *) die "Unknown DB: ${DB}. Use mariadb, mysql, percona, mysql97, mariadb123, or seekdb." ;;
 esac
 
-[[ -f "$CNF" ]] || die "Config not found: ${CNF}"
+if [[ "$SEEKDB_MODE" == "false" ]]; then
+    [[ -f "$CNF" ]] || die "Config not found: ${CNF}"
+fi
 [[ -f "$START" ]] || die "Start script not found: ${START}"
 
 log "Sweep: DB=${DB} BP=${BP_START}G-${BP_END}G step=${BP_STEP}G VU=${VU} duration=${DURATION}s"
 
-# Save original config
-cp "$CNF" "${CNF}.bak"
-trap 'cat "${CNF}.bak" > "$CNF"; rm -f "${CNF}.bak"' EXIT
+# Save original config/start script
+if [[ "$SEEKDB_MODE" == "true" ]]; then
+    cp "$START" "${START}.bak"
+    trap 'cat "${START}.bak" > "$START"; rm -f "${START}.bak"' EXIT
+else
+    cp "$CNF" "${CNF}.bak"
+    trap 'cat "${CNF}.bak" > "$CNF"; rm -f "${CNF}.bak"' EXIT
+fi
 
 # Stop any running DB containers first
-for c in $(docker ps -a --format '{{.Names}}' | grep -iE 'mysql|maria|percona'); do
+for c in $(docker ps -a --format '{{.Names}}' | grep -iE 'mysql|maria|percona|seekdb'); do
     docker rm -f "$c" 2>/dev/null || true
 done
 sleep 2
 
 for bp in $(seq "$BP_START" "$BP_STEP" "$BP_END"); do
     log "=========================================="
-    log "Starting iteration: ${DB} innodb_buffer_pool_size = ${bp}G"
+    log "Starting iteration: ${DB} memory/BP = ${bp}G"
     log "=========================================="
 
     # Ensure no leftover container
     docker rm -f "$CONTAINER" 2>/dev/null || true
     sleep 2
 
-    # Calculate buffer pool instances (each instance >= 5G, min 1)
-    instances=$(( bp / 5 ))
-    [[ "$instances" -lt 1 ]] && instances=1
+    if [[ "$SEEKDB_MODE" == "true" ]]; then
+        # Patch MEMORY_LIMIT in start script
+        sed "s/MEMORY_LIMIT=[0-9]*G/MEMORY_LIMIT=${bp}G/" "${START}.bak" > "${START}.tmp"
+        cat "${START}.tmp" > "$START"
+        rm -f "${START}.tmp"
+        log "Start script patched: MEMORY_LIMIT=${bp}G"
+    else
+        # Calculate buffer pool instances (each instance >= 5G, min 1)
+        instances=$(( bp / 5 ))
+        [[ "$instances" -lt 1 ]] && instances=1
 
-    # Patch config (use cat > to preserve inode for docker bind mount)
-    sed "s/^innodb_buffer_pool_size.*/innodb_buffer_pool_size         = ${bp}G/" "$CNF" > "${CNF}.tmp"
-    # Update instances if the setting exists (MySQL/Percona only)
-    if grep -q "^innodb_buffer_pool_instances" "${CNF}.tmp"; then
-        sed -i "s/^innodb_buffer_pool_instances.*/innodb_buffer_pool_instances    = ${instances}/" "${CNF}.tmp"
+        # Patch config (use cat > to preserve inode for docker bind mount)
+        sed "s/^innodb_buffer_pool_size.*/innodb_buffer_pool_size         = ${bp}G/" "$CNF" > "${CNF}.tmp"
+        if grep -q "^innodb_buffer_pool_instances" "${CNF}.tmp"; then
+            sed -i "s/^innodb_buffer_pool_instances.*/innodb_buffer_pool_instances    = ${instances}/" "${CNF}.tmp"
+        fi
+        cat "${CNF}.tmp" > "$CNF"
+        rm -f "${CNF}.tmp"
+        log "Config patched: $(grep -E 'innodb_buffer_pool_(size|instances)' "$CNF")"
     fi
-    cat "${CNF}.tmp" > "$CNF"
-    rm -f "${CNF}.tmp"
-    log "Config patched: $(grep -E 'innodb_buffer_pool_(size|instances)' "$CNF")"
 
     # Start DB
     log "Starting ${DB}..."
@@ -124,22 +146,26 @@ for bp in $(seq "$BP_START" "$BP_STEP" "$BP_END"); do
 
     # Wait for ready
     log "Waiting for ${DB} to be ready..."
-    retries=60
-    while ! mysql -h127.0.0.1 -P3306 -uroot -prootpassword -e "SELECT 1" &>/dev/null; do
+    retries=120
+    while ! mysql -h127.0.0.1 -P"${DB_PORT:-3306}" -u"${DB_USER:-root}" -p"${DB_PASS:-rootpassword}" -e "SELECT 1" &>/dev/null; do
         ((retries--)) || die "${DB} did not start for BP=${bp}G"
         sleep 2
     done
     log "${DB} is ready."
 
-    # Verify buffer pool matches expected
-    actual_bp=$(mysql -h127.0.0.1 -P3306 -uroot -prootpassword -N -e "SELECT ROUND(@@innodb_buffer_pool_size / 1024/1024/1024);" 2>/dev/null)
-    log "Verified buffer pool: ${actual_bp} GB (expected ${bp} GB)"
-    if [[ "$actual_bp" != "$bp" ]]; then
-        die "Buffer pool mismatch! Expected ${bp}G, got ${actual_bp}G. Check config mount."
+    # Verify memory/buffer pool
+    if [[ "$SEEKDB_MODE" == "false" ]]; then
+        actual_bp=$(mysql -h127.0.0.1 -P"${DB_PORT:-3306}" -u"${DB_USER:-root}" -p"${DB_PASS:-rootpassword}" -N -e "SELECT ROUND(@@innodb_buffer_pool_size / 1024/1024/1024);" 2>/dev/null)
+        log "Verified buffer pool: ${actual_bp} GB (expected ${bp} GB)"
+        if [[ "$actual_bp" != "$bp" ]]; then
+            die "Buffer pool mismatch! Expected ${bp}G, got ${actual_bp}G. Check config mount."
+        fi
+    else
+        log "SeekDB MEMORY_LIMIT=${bp}G (not directly verifiable via SQL)"
     fi
 
     # Run benchmark
-    log "Running benchmark: ${VU} VU, ${DURATION}s, BP=${bp}G"
+    log "Running benchmark: ${VU} VU, ${DURATION}s, memory=${bp}G"
     bash "$BENCH" -v "$VU" -d "$DURATION" -r "$RAMPUP" -l "${DB} BP ${bp}G sweep" || {
         log "Benchmark failed for BP=${bp}G, continuing..."
     }
@@ -148,7 +174,7 @@ for bp in $(seq "$BP_START" "$BP_STEP" "$BP_END"); do
     log "Stopping ${DB}..."
     bash "$CLEANUP" "$CONTAINER" || true
 
-    log "Iteration BP=${bp}G complete."
+    log "Iteration memory=${bp}G complete."
     echo ""
 done
 

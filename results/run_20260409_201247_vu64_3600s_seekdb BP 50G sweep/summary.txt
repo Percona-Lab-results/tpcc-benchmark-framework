@@ -1,0 +1,36 @@
+=== Benchmark Run Summary ===
+Date:       2026-04-09T21:22:26+00:00
+Label:      seekdb BP 50G sweep
+Warehouses: 1000
+VUs:        64
+Ramp-up:    60s
+Duration:   3600s
+
+Result:       Elapsed: 06:01 / 61:30Vuser 1:TEST RESULT : System achieved 79352 NOPM from 0 MariaDB TPM
+
+=== NOPM Statistics ===
+  Samples:  3600
+  Avg NOPM: 1687965633
+  Min NOPM: 0
+  Max NOPM: 1775769321
+
+=== QPS Statistics ===
+
+=== Files ===
+  bench_params.json                   336
+  hammerdb.log                        181K
+  innodb_status.txt                   0
+  iostat.log                          2.9M
+  mariadb.cnf                         5.7K
+  mariadb_status_after.txt            52
+  mariadb_status_before.txt           50
+  mariadb_variables.txt               22K
+  mariadb_version.txt                 33
+  mpstat.log                          29M
+  nopm_samples.csv                    111K
+  qps.csv                             162K
+  result.txt                          94
+  summary.txt                         414
+  system_info.txt                     4.0K
+  tpcc_run.tcl                        1.6K
+  vmstat.log                          364K
